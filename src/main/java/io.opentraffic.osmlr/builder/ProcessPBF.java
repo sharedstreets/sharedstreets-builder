@@ -87,18 +87,8 @@ public class ProcessPBF {
             e.printStackTrace();
         }
 
-        /*intersectionNodes.map(new MapFunction<NodeEntity, Tuple4<Long, Double, Double, String>>() {
-            @Override
-            public Tuple4<Long, Double, Double, String> map(NodeEntity value) throws Exception {
-                return new Tuple4<>(value.id, value.x, value.y,
-                        quoteString(MapStringTools.convertToString(value.fields)));
-            }
-        }).writeAsCsv("/tmp/intersection_nodes.csv").setParallelism(1);
-        */
 
-
-
-        intersectionNodes.write(new GeoJSONOutputFormat(), "/tmp/splitting_intersections.geojson").setParallelism(1);
+        intersectionNodes.write(new GeoJSONOutputFormat(), "/tmp/splitting_intersections.geojson", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute();
 

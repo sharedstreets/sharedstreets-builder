@@ -34,10 +34,15 @@ public class Intersection implements Serializable {
     }
 
     public boolean isIntersection() {
-        return (terminatingWays.size() + intersectingWays.size()) > 1;
+        return (terminatingWays.size() > 2) || (intersectingWays.size() > 1) || (terminatingWays.size() > 0 && intersectingWays.size() == 1);
     }
 
     public boolean isSplitting() {
-        return (terminatingWays.size() > 2) || (intersectingWays.size() > 1) || (terminatingWays.size() > 0 && intersectingWays.size() == 1) ;
+        return intersectingWays.size() > 0;
+    }
+
+    // find co-linear intersections (with no splitting intersections)
+    public boolean isMerging() {
+        return (terminatingWays.size() == 2  && intersectingWays.size() == 0);
     }
 }

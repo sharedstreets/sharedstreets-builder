@@ -29,11 +29,11 @@ public class OSMDataStream {
 
     // nodes
     public DataSet<NodeEntity> nodes;
-    public DataSet<Tuple3<Long, Double, Double>> nodePositions; // node_id, x, y
+    public DataSet<NodePosition> nodePositions; // node_id, x, y
 
     // ways
     private DataSet<WayEntity> rawWays;
-    public DataSet<Tuple4<Long, Long, Integer, Boolean>> orderedWayNodeLink; // way_id, node_id, order, terminal_point
+    public DataSet<WayNodeLink> orderedWayNodeLink; // way_id, node_id, order, terminal_point
     public DataSet<ComplexEntity> ways;
 
     // relaitons
@@ -77,12 +77,17 @@ public class OSMDataStream {
 
         // get only the positions of the nodes
         nodePositions = nodes
-                .map(new MapFunction<NodeEntity, Tuple3<Long, Double, Double>>() {
+                .map(new MapFunction<NodeEntity, NodePosition>() {
                     @Override
-                    public Tuple3<Long, Double, Double> map(NodeEntity value) throws Exception {
-                        return new Tuple3<Long, Double, Double>(value.id, value.x, value.y);
+                    public NodePosition map(NodeEntity value) throws Exception {
+                        return new NodePosition(value.id, value.x, value.y);
                     }
-                }).sortPartition(0, Order.ASCENDING);
+                }).sortPartition(new KeySelector<NodePosition, Long>() {
+                    @Override
+                    public Long getKey(NodePosition nodePosition) {
+                        return nodePosition.nodeId;
+                    }
+                }, Order.ASCENDING);
 
     }
 
@@ -105,9 +110,9 @@ public class OSMDataStream {
         // link way id to node ids with ordering
         // way_id, node_id, order
         orderedWayNodeLink = filteredWays
-                .flatMap(new FlatMapFunction<WayEntity, Tuple4<Long, Long, Integer, Boolean>>() {
+                .flatMap(new FlatMapFunction<WayEntity, WayNodeLink>() {
                     @Override
-                    public void flatMap(WayEntity value, Collector<Tuple4<Long, Long, Integer, Boolean>> out) throws Exception {
+                    public void flatMap(WayEntity value, Collector<WayNodeLink> out) throws Exception {
                         if (value.relatedObjects != null) {
                             int c = 0;
                             int max = value.relatedObjects.length - 1;
@@ -115,16 +120,37 @@ public class OSMDataStream {
                                 boolean terminal_point = false;
                                 if(c == 0 || c == max)
                                     terminal_point = true;
-                                out.collect(new Tuple4<>(value.id, r.relatedId, c++, terminal_point));
+                                out.collect(new WayNodeLink(value.id, r.relatedId, c++, terminal_point));
                             }
                         }
                     }
-                }).sortPartition(1, Order.ASCENDING);
+                }).sortPartition(new KeySelector<WayNodeLink, Long>() {
+                    @Override
+                    public Long getKey(WayNodeLink link) {
+                        return link.nodeId;
+                    }
+                }, Order.ASCENDING);
+
 
         // join ways with node positions
         // way_id, order, x, y
-        DataSet<Tuple4<Long, Integer, Double, Double>> joinedWaysWithPoints = orderedWayNodeLink.joinWithHuge(nodePositions).where(1)
-                .equalTo(0).projectFirst(0, 2).projectSecond(1, 2);
+        DataSet<Tuple4<Long, Integer, Double, Double>> joinedWaysWithPoints = orderedWayNodeLink.joinWithHuge(nodePositions).where(new KeySelector<WayNodeLink, Long>() {
+                    @Override
+                    public Long getKey(WayNodeLink link) {
+                        return link.nodeId;
+                    }
+                })
+                .equalTo(new KeySelector<NodePosition, Long>() {
+                    @Override
+                    public Long getKey(NodePosition nodePosition) {
+                        return nodePosition.nodeId;
+                    }
+                }).map(new MapFunction<Tuple2<WayNodeLink, NodePosition>, Tuple4<Long, Integer, Double, Double>>() {
+                    @Override
+                    public Tuple4<Long, Integer, Double, Double> map(Tuple2<WayNodeLink, NodePosition> value) throws Exception {
+                        return new Tuple4<>(value.f0.wayId, value.f0.order, value.f1.x, value.f1.y);
+                    }
+                });
 
         // group nodes by way id and sort on node field order
         // way_id, esri_polyline

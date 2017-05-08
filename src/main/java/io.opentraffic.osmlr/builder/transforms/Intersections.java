@@ -3,8 +3,10 @@ package io.opentraffic.osmlr.builder.transforms;
 
 import io.opentraffic.osmlr.builder.model.Intersection;
 import io.opentraffic.osmlr.osm.OSMDataStream;
+import io.opentraffic.osmlr.osm.model.WayNodeLink;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.util.Collector;
 
@@ -20,22 +22,22 @@ public class Intersections {
     }
 
     class IntersectionReducer
-            implements GroupReduceFunction<Tuple4<Long, Long, Integer, Boolean>, Intersection> {
+            implements GroupReduceFunction<WayNodeLink, Intersection> {
 
         @Override
-        public void reduce(Iterable<Tuple4<Long, Long, Integer, Boolean>> in, Collector<Intersection> out) {
+        public void reduce(Iterable<WayNodeLink> in, Collector<Intersection> out) {
 
 
             Intersection intersection = new Intersection();
 
             // add all strings of the group to the set
-            for (Tuple4<Long, Long, Integer, Boolean> n : in) {
-                intersection.addWay(n.f0, n.f1, n.f3);
+            for (WayNodeLink n : in) {
+                intersection.addWay(n.wayId, n.nodeId, n.terminatingNode);
             }
 
             if(intersection.isIntersection())
                 out.collect(intersection);
-        }
+            }
     }
 
     // intersections
@@ -48,7 +50,11 @@ public class Intersections {
         // using intersections with way count > 1 to merge ways into OSMLR segments
         // using intersections with way count > 2 to split ways
 
-
-        intersections = dataStream.orderedWayNodeLink.groupBy(1).reduceGroup(new IntersectionReducer());
+        intersections = dataStream.orderedWayNodeLink.groupBy(new KeySelector<WayNodeLink, Long>() {
+            @Override
+            public Long getKey(WayNodeLink link) {
+                return link.wayId;
+            }
+        }).reduceGroup(new IntersectionReducer());
     }
 }
