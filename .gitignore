@@ -1,0 +1,11 @@
+.gradletasknamecache
+.gradle/
+build/
+bin/
+
+data/
+
+*.iml
+*.ipr
+*.iws
+.idea/

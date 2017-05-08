@@ -1,0 +1,75 @@
+group 'io.opentraffic'
+version '0.1-SNAPSHOT'
+
+
+buildscript {
+    repositories { jcenter() }
+    dependencies { classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'} //  Note PF : this plugin does not support resource transformation (needed for akka configuration files
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+
+import com.github.jengelman.gradle.plugins.shadow.tasks.*
+
+
+sourceCompatibility = 1.8
+
+repositories {
+    maven { url "http://repository.apache.org" }
+    jcenter()
+    mavenLocal()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+idea {
+    module {
+        // if you hate browsing Javadoc
+        downloadJavadoc = false
+
+        // and love reading sources :)
+        downloadSources = true
+    }
+}
+
+def flinkversion = "1.2.1"
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile files('external/osmpbf-1.3.3.jar')
+    compile 'com.esri.geometry:esri-geometry-api:1.2.1'
+    compile "org.apache.flink:flink-java:${flinkversion}"
+    compile "org.apache.flink:flink-clients_2.10:${flinkversion}"
+
+    testCompile "junit:junit:4.11"
+}
+
+jar {
+    manifest { attributes 'Main-Class': 'io.opentraffic.osmlr.builder.ProcessPBF' }
+}
+
+// shadow jar, for use inside a flink cluster (does not include the flink stack)
+shadowJar {
+    dependencies {
+        include(dependency('com.esri.geometry:esri-geometry-api'))
+        include(dependency(files('external/osmpbf-1.3.3.jar')))
+    }
+}
+
+// this task generate a jar bundle that include all the flink stack,
+// and permit to use the soft from a command line
+task allJars(type: ShadowJar) {
+    from sourceSets.main.output
+    configurations = [project.configurations.compile]
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) { resource = 'reference.conf' }
+
+    manifest {
+        attributes 'Implementation-Title': 'osmrl-builder', 'Implementation-Version': version
+        attributes 'Main-Class': 'io.opentraffic.osmlr.builder.ProcessPBF'
+    }
+}
