@@ -4,6 +4,7 @@ package io.opentraffic.osmlr.builder.transforms;
 import io.opentraffic.osmlr.builder.model.Intersection;
 import io.opentraffic.osmlr.osm.OSMDataStream;
 import io.opentraffic.osmlr.osm.model.WayNodeLink;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.functions.KeySelector;
@@ -41,7 +42,6 @@ public class Intersections {
     }
 
     // intersections
-    // node_id, Set<way_id>
     public DataSet<Intersection> intersections;
 
     public Intersections(OSMDataStream dataStream) {
@@ -57,4 +57,25 @@ public class Intersections {
             }
         }).reduceGroup(new IntersectionReducer());
     }
+
+    public DataSet<Intersection> splittingIntersections(){
+
+        return intersections.filter(new FilterFunction<Intersection>() {
+            @Override
+            public boolean filter(Intersection value) throws Exception {
+                return value.isSplitting();
+            }
+        });
+    }
+
+    public DataSet<Intersection> mergingIntersections(){
+
+        return intersections.filter(new FilterFunction<Intersection>() {
+            @Override
+            public boolean filter(Intersection value) throws Exception {
+                return value.isMerging();
+            }
+        });
+    }
+
 }

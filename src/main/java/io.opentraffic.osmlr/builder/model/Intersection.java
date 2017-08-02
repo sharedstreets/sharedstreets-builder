@@ -33,12 +33,14 @@ public class Intersection implements Serializable {
             intersectingWays.add(wayId);
     }
 
+    // node with more than one way
     public boolean isIntersection() {
-        return (terminatingWays.size() > 2) || (intersectingWays.size() > 1) || (terminatingWays.size() > 0 && intersectingWays.size() == 1);
+        return (terminatingWays.size() + intersectingWays.size()) > 1;
     }
 
+    // splits one or more ways
     public boolean isSplitting() {
-        return intersectingWays.size() > 0;
+        return (intersectingWays.size() > 1) || (terminatingWays.size() > 0 && intersectingWays.size() == 1);
     }
 
     // find co-linear intersections (with no splitting intersections)
