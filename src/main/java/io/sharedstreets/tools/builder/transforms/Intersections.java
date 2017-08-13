@@ -1,18 +1,14 @@
-package io.opentraffic.osmlr.builder.transforms;
+package io.sharedstreets.tools.builder.transforms;
 
 
-import io.opentraffic.osmlr.builder.model.Intersection;
-import io.opentraffic.osmlr.osm.OSMDataStream;
-import io.opentraffic.osmlr.osm.model.WayNodeLink;
+import io.sharedstreets.tools.builder.model.Intersection;
+import io.sharedstreets.data.osm.OSMDataStream;
+import io.sharedstreets.data.osm.model.WayNodeLink;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.util.Collector;
-
-import java.util.Iterator;
-
 
 
 public class Intersections {
@@ -28,10 +24,8 @@ public class Intersections {
         @Override
         public void reduce(Iterable<WayNodeLink> in, Collector<Intersection> out) {
 
-
             Intersection intersection = new Intersection();
 
-            // add all strings of the group to the set
             for (WayNodeLink n : in) {
                 intersection.addWay(n.wayId, n.nodeId, n.terminatingNode);
             }
@@ -53,7 +47,7 @@ public class Intersections {
         intersections = dataStream.orderedWayNodeLink.groupBy(new KeySelector<WayNodeLink, Long>() {
             @Override
             public Long getKey(WayNodeLink link) {
-                return link.wayId;
+                return link.nodeId;
             }
         }).reduceGroup(new IntersectionReducer());
     }

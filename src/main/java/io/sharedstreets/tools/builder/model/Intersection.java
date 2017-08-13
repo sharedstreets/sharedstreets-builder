@@ -1,4 +1,4 @@
-package io.opentraffic.osmlr.builder.model;
+package io.sharedstreets.tools.builder.model;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -43,8 +43,9 @@ public class Intersection implements Serializable {
         return (intersectingWays.size() > 1) || (terminatingWays.size() > 0 && intersectingWays.size() == 1);
     }
 
-    // find co-linear intersections (with no splitting intersections)
+    // find co-linear intersections (with no splitting streets)
     public boolean isMerging() {
+
         return (terminatingWays.size() == 2  && intersectingWays.size() == 0);
     }
 }

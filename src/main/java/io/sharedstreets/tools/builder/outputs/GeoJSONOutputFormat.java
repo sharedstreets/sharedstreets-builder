@@ -1,4 +1,4 @@
-package io.opentraffic.osmlr.builder.outputs;
+package io.sharedstreets.tools.builder.outputs;
 
 
 import java.io.BufferedOutputStream;
@@ -8,21 +8,15 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 
 import com.esri.core.geometry.OperatorExportToGeoJson;
-import com.esri.core.geometry.OperatorImportFromGeoJson;
-import com.esri.core.geometry.SpatialReference;
-import io.opentraffic.osmlr.osm.model.SpatialEntity;
+import io.sharedstreets.data.osm.model.SpatialEntity;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.io.FileOutputFormat;
-import org.apache.flink.api.java.io.TextOutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.flink.api.common.InvalidProgramException;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
-import org.apache.flink.core.fs.Path;
-
-import io.opentraffic.osmlr.osm.model.ComplexEntity;
 
 
 @PublicEvolving
