@@ -2,6 +2,9 @@ package io.sharedstreets.tools.builder.model;
 
 
 import com.esri.core.geometry.Geometry;
+import com.esri.core.geometry.GeometryEngine;
+import com.esri.core.geometry.Polyline;
+import io.sharedstreets.data.osm.model.NodePosition;
 import io.sharedstreets.data.osm.model.SpatialEntity;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -75,6 +78,22 @@ public class BaseSegment extends SpatialEntity {
 
     @Override
     public Geometry constructGeometry() {
-        return null; //GeometryEngine.geometryFromEsriShape(shapeGeometry, geomType);
+
+        Polyline line = new Polyline();
+
+        boolean firstPosition = true;
+
+        for(WaySection section : this.waySections) {
+            for(NodePosition node : section.nodes) {
+                if(firstPosition == true) {
+                    line.startPath(node.x, node.y);
+                    firstPosition = false;
+                }
+                else
+                    line.lineTo(node.x, node.y);
+            }
+        }
+
+        return line;
     }
 }

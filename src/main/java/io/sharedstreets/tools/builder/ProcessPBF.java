@@ -1,10 +1,12 @@
 package io.sharedstreets.tools.builder;
 
+import io.sharedstreets.tools.builder.outputs.GeoJSONOutputFormat;
 import io.sharedstreets.tools.builder.transforms.Intersections;
 import io.sharedstreets.data.osm.OSMDataStream;
 import io.sharedstreets.tools.builder.transforms.Segments;
 import org.apache.flink.api.java.ExecutionEnvironment;
 
+import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -21,7 +23,7 @@ public class ProcessPBF {
 
         final ExecutionEnvironment env = ExecutionEnvironment.createLocalEnvironment();
 
-        String inputFile = "data/cebu_extract.pbf";
+        String inputFile = "data/nyc_extract.pbf";
 
         OSMDataStream dataStream = new OSMDataStream(inputFile, env);
 
@@ -48,38 +50,11 @@ public class ProcessPBF {
         long segmentCount = segments.segements.count();
         LOG.info("BaseSegment count: {}", segmentCount);
 
-//        DataSet<NodeEntity> intersectionNodes = dataStream
-//                .nodes.joinWithHuge(splittingIntersections)
-//                .where(new KeySelector<NodeEntity, Long>() {
-//                    @Override
-//                    public Long getKey(NodeEntity value) throws Exception {
-//                        return value.id;
-//                    }
-//                }).equalTo(new KeySelector<Intersection, Long>() {
-//                    @Override
-//                    public Long getKey(Intersection value) throws Exception {
-//                        return value.nodeId;
-//                    }
-//                })
-//                .map(new MapFunction<Tuple2<NodeEntity, Intersection>, NodeEntity>() {
-//                    @Override
-//                    public NodeEntity map(Tuple2<NodeEntity, Intersection> in) throws Exception {
-//                        return in.f0;
-//
-//                    }
-//                });
-
-//        try {
-//            long count = intersectionNodes.count();
-//            System.out.printf("Intersection nodes count: %d", count);
-//        } catch (Exception e){
-//            e.printStackTrace();
-//        }
-//
-//
-//        intersectionNodes.write(new GeoJSONOutputFormat(), "/tmp/splitting_intersections.geojson", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        segments.segements.write(new GeoJSONOutputFormat(), "/tmp/nyc_segments.geojson", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute();
+
+        System.out.println(env.getExecutionPlan());
 
     }
 
