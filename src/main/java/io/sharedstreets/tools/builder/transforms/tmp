@@ -2,45 +2,32 @@ package io.sharedstreets.tools.builder.model;
 
 
 import com.esri.core.geometry.Geometry;
+import com.esri.core.geometry.GeometryEngine;
 import com.esri.core.geometry.Polyline;
 import io.sharedstreets.data.osm.model.NodePosition;
 import io.sharedstreets.data.osm.model.SpatialEntity;
-import io.sharedstreets.data.osm.model.Way;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.UUID;
 
 public class BaseSegment extends SpatialEntity {
 
-    public WaySection[] waySections;
-    public boolean oneWay;
-    public boolean link;
-    public boolean roundabout;
+    public long id;
+    WaySection[] waySections;
+    Boolean oneWay;
+
 
     public BaseSegment(WaySection section) {
-
-        // TODO switch to UniqueID to avoid collisions
         id = UUID.randomUUID().getLeastSignificantBits();
         waySections = new WaySection[1];
         waySections[0] = section;
         oneWay = section.oneWay;
-        link = section.link;
-        roundabout = section.roundabout;
-
     }
 
     public static boolean canMerge(BaseSegment baseSegment1, BaseSegment baseSegment2) {
 
         // can't merge oneway with non-onway
         if(baseSegment1.oneWay != baseSegment2.oneWay)
-            return false;
-
-        // can't merge link roads with non-link roads
-        if(baseSegment1.link != baseSegment2.link)
-            return false;
-
-        // can't merge roundabouts  with non-roundabouts
-        if(baseSegment1.roundabout != baseSegment2.roundabout)
             return false;
 
         // check for duplicates-- need to catch circular segments (they appear mergable)
@@ -89,8 +76,6 @@ public class BaseSegment extends SpatialEntity {
         return waySections[waySections.length - 1].nodes[waySections[waySections.length - 1].nodes.length -1].nodeId;
     }
 
-
-
     @Override
     public Geometry constructGeometry() {
 
@@ -101,15 +86,13 @@ public class BaseSegment extends SpatialEntity {
         for(WaySection section : this.waySections) {
             for(NodePosition node : section.nodes) {
                 if(firstPosition == true) {
-                    line.startPath(node.lon, node.lat);
+                    line.startPath(node.x, node.y);
                     firstPosition = false;
                 }
                 else
-                    line.lineTo(node.lon, node.lat);
+                    line.lineTo(node.x, node.y);
             }
         }
-
-
 
         return line;
     }

@@ -1,0 +1,3 @@
+[submodule "proto/geobuf"]
+	path = proto/geobuf
+	url = https://github.com/mapbox/geobuf.git

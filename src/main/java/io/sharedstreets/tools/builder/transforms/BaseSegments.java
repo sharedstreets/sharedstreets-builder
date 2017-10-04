@@ -21,14 +21,13 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
 
+public class BaseSegments implements Serializable {
 
-public class Segments implements Serializable {
+    Logger LOG = LoggerFactory.getLogger(BaseSegments.class);
 
-    Logger LOG = LoggerFactory.getLogger(Segments.class);
+    public DataSet<BaseSegment> segments;
 
-    public DataSet<BaseSegment> segements;
-
-    public Segments(OSMDataStream dataStream, Intersections intersections) {
+    public BaseSegments(OSMDataStream dataStream, Intersections intersections) {
 
         // split ways
 
@@ -78,7 +77,6 @@ public class Segments implements Serializable {
                 public void reduce(Iterable<Tuple2<Long, Long>> values,
                                    Collector<Tuple2<Long, Long[]>> out) throws Exception {
 
-
                     ArrayList<Long> splitPoints = new ArrayList<>();
 
                     long id = -1;
@@ -124,8 +122,10 @@ public class Segments implements Serializable {
                             section.wayId  = way.f1.id;
                             section.nodes = Arrays.copyOfRange(way.f1.nodes, 0, way.f1.nodes.length);
                             section.oneWay = way.f1.isOneWay();
+                            section.roadClass = way.f1.roadClass();
+                            section.link = way.f1.isLink();
+                            section.roundabout = way.f1.isRoundabout();
                             out.collect(section);
-
                         }
                         else {
 
@@ -145,6 +145,9 @@ public class Segments implements Serializable {
                                         section.wayId  = way.f1.id;
                                         section.nodes = Arrays.copyOfRange(way.f1.nodes, previousSplit, i + 1);
                                         section.oneWay = way.f1.isOneWay();
+                                        section.roadClass = way.f1.roadClass();
+                                        section.link = way.f1.isLink();
+                                        section.roundabout = way.f1.isRoundabout();
                                         out.collect(section);
 
                                         previousSplit = i;
@@ -158,9 +161,11 @@ public class Segments implements Serializable {
                                 section.wayId = way.f1.id;
                                 section.nodes = Arrays.copyOfRange(way.f1.nodes, previousSplit, way.f1.nodes.length);
                                 section.oneWay = way.f1.isOneWay();
+                                section.roadClass = way.f1.roadClass();
+                                section.link = way.f1.isLink();
+                                section.roundabout = way.f1.isRoundabout();
 
                                 out.collect(section);
-
                             }
                         }
                     }
@@ -175,14 +180,22 @@ public class Segments implements Serializable {
             e.printStackTrace();
         }
 
-        // map way section to segments (one section per segment
+        // map way section to segments (one section per segment)
         DataSet<BaseSegment> initialSegments = waySections.map(new MapFunction<WaySection, BaseSegment>() {
             @Override
-            public BaseSegment map(WaySection section) throws Exception {
-                return new BaseSegment(section);
+            public BaseSegment map(WaySection value) throws Exception {
+                return new BaseSegment(value);
             }
         });
 
+
+        try {
+            long initialSegmentCount = initialSegments.count();
+            LOG.info("Way section count: {}", initialSegmentCount);
+
+        } catch (Exception e){
+            e.printStackTrace();
+        }
 
         // begin iteration
         // to reduce segments down so all merged sections are contained within a single BaseSegment
@@ -335,7 +348,7 @@ public class Segments implements Serializable {
         // combine merged segments with already complete segements
         DataSet<BaseSegment> iterationOutput = mergedSegments.union(deduplicatedSegmentsWithoutMergingIntersection);
 
-        segements = iterateSegments.closeWith(iterationOutput, remainingSegmentsWithMergingIntersection);
+        segments = iterateSegments.closeWith(iterationOutput, remainingSegmentsWithMergingIntersection);
 
         // phew -- and we've got segments...
 

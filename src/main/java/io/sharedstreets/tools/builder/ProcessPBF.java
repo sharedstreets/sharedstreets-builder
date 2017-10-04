@@ -1,16 +1,16 @@
 package io.sharedstreets.tools.builder;
 
 import io.sharedstreets.tools.builder.outputs.GeoJSONOutputFormat;
+import io.sharedstreets.tools.builder.outputs.tiles.SSGGeoJSONTile;
 import io.sharedstreets.tools.builder.transforms.Intersections;
 import io.sharedstreets.data.osm.OSMDataStream;
-import io.sharedstreets.tools.builder.transforms.Segments;
+import io.sharedstreets.tools.builder.transforms.BaseSegments;
+import io.sharedstreets.tools.builder.transforms.SharedStreets;
 import org.apache.flink.api.java.ExecutionEnvironment;
 
 import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
-
-import java.net.URL;
 
 
 public class ProcessPBF {
@@ -40,17 +40,19 @@ public class ProcessPBF {
 
 
         // split ways
-        Segments segments = new Segments(dataStream, intersections);
+        BaseSegments segments = new BaseSegments(dataStream, intersections);
 
         long wayCount = dataStream.ways.count();
 
         LOG.info("Way count: {}", wayCount);
 
 
-        long segmentCount = segments.segements.count();
+        long segmentCount = segments.segments.count();
         LOG.info("BaseSegment count: {}", segmentCount);
 
-        segments.segements.write(new GeoJSONOutputFormat(), "/tmp/nyc_segments.geojson", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        SharedStreets references = new SharedStreets(segments);
+
+        references.geometries.write(new SSGGeoJSONTile(), "/tmp/nyc_segments.geojson", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute();
 
