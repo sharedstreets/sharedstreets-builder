@@ -4,10 +4,10 @@ package io.sharedstreets.tools.builder.outputs.tiles;
 import com.esri.core.geometry.OperatorExportToGeoJson;
 import io.sharedstreets.data.SharedStreetGeometry;
 import io.sharedstreets.data.osm.model.SpatialEntity;
+import io.sharedstreets.util.TileId;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.InvalidProgramException;
-import org.apache.flink.api.common.io.FileOutputFormat;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
 import org.slf4j.Logger;
@@ -18,10 +18,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
 
 @PublicEvolving
-public class SSGGeoJSONTile<T extends SharedStreetGeometry> extends FileOutputFormat<T> implements InputTypeConfigurable {
+public class SSGGeoJSONTile<T extends SharedStreetGeometry> extends TileOutputFormat<T> implements InputTypeConfigurable {
 
     private static final long serialVersionUID = 1L;
 
@@ -30,27 +31,40 @@ public class SSGGeoJSONTile<T extends SharedStreetGeometry> extends FileOutputFo
 
     public static final String DEFAULT_LINE_DELIMITER = ",";
 
-    private transient Writer wrt;
+    private transient HashMap<String, GeoJSONTileWriter> writers;
 
-    private boolean firstRecord = true;
+    public SSGGeoJSONTile(String path) {
+        super(path);
+    }
+
 
     @Override
     public void open(int taskNumber, int numTasks) throws IOException {
         super.open(taskNumber, numTasks);
-        this.wrt = new OutputStreamWriter(new BufferedOutputStream(this.stream, 4096), StandardCharsets.UTF_8);
-
-        this.wrt.write("{\n  \"type\": \"FeatureCollection\",\n  \"features\": [");
+        writers = new HashMap<>();
     }
 
     @Override
     public void close() throws IOException {
-        if (wrt != null) {
-            this.wrt.write("]\n}");
 
-            this.wrt.flush();
-            this.wrt.close();
+        for(GeoJSONTileWriter wrt : writers.values()) {
+            if (wrt != null) {
+                wrt.close();
+            }
         }
+
         super.close();
+    }
+
+    public GeoJSONTileWriter getWriter(String key) throws IOException {
+
+        if(!writers.containsKey(key)) {
+            GeoJSONTileWriter writer = new GeoJSONTileWriter();
+            writer.open(this.getStream(key));
+            writers.put(key, writer);
+        }
+
+        return writers.get(key);
     }
 
 
@@ -58,17 +72,16 @@ public class SSGGeoJSONTile<T extends SharedStreetGeometry> extends FileOutputFo
 
         String geoJsonGeom = OperatorExportToGeoJson.local().execute(element.geometry);
 
-        // add the record delimiter
-        if(!this.firstRecord)
-            this.wrt.write(DEFAULT_LINE_DELIMITER);
+        TileId tileId = element.getTileKey();
 
-        this.wrt.write(" { \"type\": \"Feature\", \"properties\": {\"id\": \"" + element.id + "\"}, \"geometry\":");
+        if(tileId == null) {
+            tileId = new TileId();
+            tileId.x = 0;
+            tileId.y = 0;
+        }
 
-        this.wrt.write(geoJsonGeom);
+        this.getWriter(tileId.toString()).writeRecord(" { \"type\": \"Feature\", \"properties\": {\"id\": \"" + element.id + "\", \"wayIds\": \"" + element.wayIds + "\"}, \"geometry\":" +  geoJsonGeom + " }\n");
 
-        this.wrt.write(" }\n");
-
-        this.firstRecord = false;
     }
 
     // --------------------------------------------------------------------------------------------

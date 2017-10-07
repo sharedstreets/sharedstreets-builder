@@ -6,6 +6,7 @@ import io.sharedstreets.data.SharedStreetReference;
 import io.sharedstreets.data.osm.OSMDataStream;
 import io.sharedstreets.tools.builder.model.BaseSegment;
 import io.sharedstreets.util.UniqueId;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
@@ -23,8 +24,7 @@ public class SharedStreets implements Serializable {
 
     public SharedStreets(BaseSegments segments) {
 
-
-        references = segments.segments.flatMap(new FlatMapFunction<BaseSegment, SharedStreetReference>() {
+        DataSet<SharedStreetReference> allReferences = segments.segments.flatMap(new FlatMapFunction<BaseSegment, SharedStreetReference>() {
             @Override
             public void flatMap(BaseSegment value, Collector<SharedStreetReference> out) throws Exception {
                 List<SharedStreetReference> references = SharedStreetReference.getSharedStreetsReferences(value);
@@ -32,6 +32,16 @@ public class SharedStreets implements Serializable {
                 for(SharedStreetReference reference : references) {
                     out.collect(reference);
                 }
+            }
+        });
+
+        references = allReferences.filter(new FilterFunction<SharedStreetReference>() {
+            @Override
+            public boolean filter(SharedStreetReference value) throws Exception {
+                if(value.formOfWay == SharedStreetReference.FORM_OF_WAY.Other || value.formOfWay == SharedStreetReference.FORM_OF_WAY.Undefined)
+                    return false;
+                else
+                    return true;
             }
         });
 

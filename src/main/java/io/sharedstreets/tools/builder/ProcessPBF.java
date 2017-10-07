@@ -1,7 +1,9 @@
 package io.sharedstreets.tools.builder;
 
+import io.sharedstreets.data.SharedStreetGeometry;
 import io.sharedstreets.tools.builder.outputs.GeoJSONOutputFormat;
 import io.sharedstreets.tools.builder.outputs.tiles.SSGGeoJSONTile;
+import io.sharedstreets.tools.builder.outputs.tiles.TileOutputFormat;
 import io.sharedstreets.tools.builder.transforms.Intersections;
 import io.sharedstreets.data.osm.OSMDataStream;
 import io.sharedstreets.tools.builder.transforms.BaseSegments;
@@ -12,6 +14,8 @@ import org.apache.flink.core.fs.FileSystem;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
+import java.io.IOException;
+
 
 public class ProcessPBF {
 
@@ -21,7 +25,7 @@ public class ProcessPBF {
 
     public static void main(String[] args) throws Exception {
 
-        final ExecutionEnvironment env = ExecutionEnvironment.createLocalEnvironment();
+        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         String inputFile = "data/nyc_extract.pbf";
 
@@ -30,33 +34,14 @@ public class ProcessPBF {
         // create intersections
         Intersections intersections = new Intersections(dataStream);
 
-
-        try {
-            long count = intersections.intersections.count();
-            LOG.info("Intersections count: {}", count);
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-
-
         // split ways
         BaseSegments segments = new BaseSegments(dataStream, intersections);
 
-        long wayCount = dataStream.ways.count();
-
-        LOG.info("Way count: {}", wayCount);
-
-
-        long segmentCount = segments.segments.count();
-        LOG.info("BaseSegment count: {}", segmentCount);
-
         SharedStreets references = new SharedStreets(segments);
 
-        references.geometries.write(new SSGGeoJSONTile(), "/tmp/nyc_segments.geojson", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        references.geometries.output(new SSGGeoJSONTile<SharedStreetGeometry>("/tmp/tiles")).setParallelism(1);
 
         env.execute();
-
-        System.out.println(env.getExecutionPlan());
 
     }
 

@@ -45,6 +45,9 @@ public class TileId implements Value, Comparable<TileId> {
         return Math.min(Math.max(n, minValue), maxValue);
     }
 
+    public String toString() {
+        return "10-" + x + "-" + y;
+    }
 
     @Override
     public int compareTo(TileId o) {

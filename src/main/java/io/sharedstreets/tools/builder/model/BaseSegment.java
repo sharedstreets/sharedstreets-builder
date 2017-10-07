@@ -48,9 +48,9 @@ public class BaseSegment extends SpatialEntity {
             boolean duplicate = true;
 
             for(int i = 0; i < baseSegment1.waySections.length; i++) {
-                if(     baseSegment1.waySections[i].wayId != baseSegment2.waySections[i].wayId &&
-                        baseSegment1.waySections[i].nodes[0] != baseSegment2.waySections[i].nodes[0] &&
-                        baseSegment1.waySections[i].nodes[baseSegment1.waySections[i].nodes.length - 1] != baseSegment2.waySections[i].nodes[baseSegment2.waySections[i].nodes.length - 1]) {
+                if(     !baseSegment1.waySections[i].wayId.equals(baseSegment2.waySections[i].wayId) &&
+                        !baseSegment1.waySections[i].nodes[0].nodeId.equals(baseSegment2.waySections[i].nodes[0].nodeId) &&
+                        !baseSegment1.waySections[i].nodes[baseSegment1.waySections[i].nodes.length - 1].nodeId.equals(baseSegment2.waySections[i].nodes[baseSegment2.waySections[i].nodes.length - 1].nodeId)) {
                     duplicate = false;
                 }
             }
@@ -65,11 +65,13 @@ public class BaseSegment extends SpatialEntity {
     public static BaseSegment merge(BaseSegment baseSegment1, BaseSegment baseSegment2) {
 
         if(canMerge(baseSegment1, baseSegment2)) {
-            if (baseSegment2.getFirstNode() == baseSegment1.getLastNode()) {
+            if (baseSegment2.getFirstNode().equals(baseSegment1.getLastNode())) {
                 baseSegment1.append(baseSegment2);
+                baseSegment1.id = UUID.randomUUID().getLeastSignificantBits();
                 return baseSegment1;
-            } else if (baseSegment1.getFirstNode() == baseSegment2.getLastNode()) {
+            } else if (baseSegment1.getFirstNode().equals(baseSegment2.getLastNode())) {
                 baseSegment2.append(baseSegment1);
+                baseSegment2.id = UUID.randomUUID().getLeastSignificantBits();
                 return baseSegment2;
             }
         }
@@ -89,7 +91,16 @@ public class BaseSegment extends SpatialEntity {
         return waySections[waySections.length - 1].nodes[waySections[waySections.length - 1].nodes.length -1].nodeId;
     }
 
+    public String getWayIds() {
+        String id[] = new String[this.waySections.length];
 
+        int i = 0;
+        for(WaySection waySection : this.waySections) {
+            id[i] = waySection.wayId + "";
+            i++;
+        }
+        return String.join( ",", id);
+    }
 
     @Override
     public Geometry constructGeometry() {
