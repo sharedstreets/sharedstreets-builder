@@ -43,6 +43,12 @@ public class BaseSegment extends SpatialEntity {
         if(baseSegment1.roundabout != baseSegment2.roundabout)
             return false;
 
+        // if oneway or roundabout (implicitly oneway or...ack!) both sections need to be going in the same direction
+        if((baseSegment1.oneWay && baseSegment2.oneWay) || (baseSegment1.roundabout && baseSegment2.roundabout)){
+            if (!baseSegment2.getFirstNode().equals(baseSegment1.getLastNode()) || !baseSegment1.getFirstNode().equals(baseSegment2.getLastNode()))
+                return false;
+        }
+
         // check for duplicates-- need to catch circular segments (they appear mergable)
         if(baseSegment1.waySections.length == baseSegment2.waySections.length) {
             boolean duplicate = true;
@@ -73,6 +79,18 @@ public class BaseSegment extends SpatialEntity {
                 baseSegment2.append(baseSegment1);
                 baseSegment2.id = UUID.randomUUID().getLeastSignificantBits();
                 return baseSegment2;
+            } else if (baseSegment1.getFirstNode().equals(baseSegment2.getFirstNode())) {
+                // need to handle segments drawn in opposite directions
+                baseSegment2.reverse();
+                baseSegment2.append(baseSegment1);
+                baseSegment2.id = UUID.randomUUID().getLeastSignificantBits();
+                return baseSegment2;
+            } else if (baseSegment1.getLastNode().equals(baseSegment2.getLastNode())) {
+                // need to handle segments drawn in opposite directions
+                baseSegment2.reverse();
+                baseSegment1.append(baseSegment2);
+                baseSegment2.id = UUID.randomUUID().getLeastSignificantBits();
+                return baseSegment2;
             }
         }
 
@@ -81,6 +99,21 @@ public class BaseSegment extends SpatialEntity {
 
     public void append(BaseSegment baseSegment) {
         this.waySections = ArrayUtils.addAll(this.waySections, baseSegment.waySections);
+    }
+
+    public void reverse() {
+        for(WaySection section : this.waySections) {
+            ArrayUtils.reverse(section.nodes);
+        }
+        ArrayUtils.reverse(this.waySections);
+    }
+
+    public boolean containsWay(Long wayId) {
+        for(WaySection section : this.waySections) {
+            if(section.wayId.equals(wayId))
+                return true;
+        }
+        return false;
     }
 
     public Long getFirstNode() {

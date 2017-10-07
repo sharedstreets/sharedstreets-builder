@@ -107,6 +107,7 @@ public class BaseSegments implements Serializable {
                     @Override
                     public void join(Tuple2<Long, Way> way, Tuple2<Long, Long[]> second, Collector<WaySection> out) throws Exception {
 
+
                         // unsplit way -- copy everything
                         if(second == null || second.f1.length == 0) {
 
@@ -177,7 +178,7 @@ public class BaseSegments implements Serializable {
 
         // begin iteration
         // to reduce segments down so all merged sections are contained within a single BaseSegment
-        IterativeDataSet<BaseSegment> iterateSegments = initialSegments.iterate(5);
+        IterativeDataSet<BaseSegment> iterateSegments = initialSegments.iterate(1000);
 
         //  Input:
         //
@@ -235,63 +236,91 @@ public class BaseSegments implements Serializable {
                     }
                 });
 
-        // join segments with merging intersections (only segments with common merging intersections get combined)
-        DataSet<Tuple4<Long, Long, Boolean, BaseSegment>> segmentWithMergingIntersection = segmentIntersectionMap
-                .leftOuterJoin(mappedMergingIntersections)
-                .where(0)
-                .equalTo(0)
-                .with(new JoinFunction<Tuple4<Long, Long, Boolean, BaseSegment>, Tuple2<Long, Intersection>, Tuple4<Long, Long, Boolean, BaseSegment>>() {
-                    @Override
-                    public Tuple4<Long, Long, Boolean, BaseSegment> join(Tuple4<Long, Long, Boolean, BaseSegment> first, Tuple2<Long, Intersection> second) throws Exception {
+            // join segments with merging intersections (only segments with common merging intersections get combined)
+            DataSet<Tuple4<Long, Long, Boolean, BaseSegment>> unfilteredSegmentWithMergingIntersection = segmentIntersectionMap
+                    .leftOuterJoin(mappedMergingIntersections)
+                    .where(0)
+                    .equalTo(0)
+                    .with(new JoinFunction<Tuple4<Long, Long, Boolean, BaseSegment>, Tuple2<Long, Intersection>, Tuple4<Long, Long, Boolean, BaseSegment>>() {
+                        @Override
+                        public Tuple4<Long, Long, Boolean, BaseSegment> join(Tuple4<Long, Long, Boolean, BaseSegment> first, Tuple2<Long, Intersection> second) throws Exception {
 
-                        if(second != null && second.f1 != null && second.f1.isMerging())
-                            first.f2 = true;
-                        else
-                            first.f2 = false;
+                            if(second != null && second.f1 != null && second.f1.isMerging())
+                                first.f2 = true;
+                            else
+                                first.f2 = false;
 
-                        if(first.f1 == 421137134l)
-                            System.out.println("found 421137134: merging " + first.f1);
-
-                        if(first.f1 == 280656590l)
-                            System.out.println("found 421137134: merging " + first.f1);
-
-                        return first;
-                    }
-                });
-
-
-        //
-        // Step 2: Remove duplicate sections
-        //
-        // Only want to process each segment once per iteration. For segments with both merging and non-merging, keep the merging version.
-        // For segments with two merging intersections, keep the first segment-intersection relationship
-        // (the other intersection will get processed in the next iteration).
-        //
-        // =====A====*              0====C=====  0====D====  *====E=====
-        //              ====B====0
-        //
-
-        DataSet<Tuple4<Long, Long, Boolean, BaseSegment>> deduplicatedSegments = segmentWithMergingIntersection
-                .groupBy(1) // segmentId
-                .reduceGroup(new GroupReduceFunction<Tuple4<Long, Long, Boolean, BaseSegment>, Tuple4<Long, Long, Boolean, BaseSegment>>() {
-                    @Override
-                    public void reduce(Iterable<Tuple4<Long, Long, Boolean, BaseSegment>> values, Collector<Tuple4<Long, Long, Boolean, BaseSegment>> out) throws Exception {
-                        Tuple4<Long, Long, Boolean, BaseSegment> savedSegment = null;
-
-                        for(Tuple4<Long, Long, Boolean, BaseSegment> value : values){
-
-                            if(value.f2) {
-                                // iterate through segments until we find a merging intersection -- keep it
-                                savedSegment = value;
-                                break;
-                            }
-                            // alternatively keep one non-merging segment
-                            savedSegment = value;
+                            return first;
                         }
+                    });
 
-                        out.collect(savedSegment);
-                    }
-                });
+            // need to clean up merging intersections that can't actually merge (use BaseSegment.canMerge criteria)
+
+            DataSet<Tuple4<Long, Long, Boolean, BaseSegment>> cleanedSegmentsWithMergingIntersection = unfilteredSegmentWithMergingIntersection
+                    .groupBy(0) // nodeId
+                    .reduceGroup(new GroupReduceFunction<Tuple4<Long, Long, Boolean, BaseSegment>, Tuple4<Long, Long, Boolean, BaseSegment>>() {
+                     @Override
+                     public void reduce(Iterable<Tuple4<Long, Long, Boolean, BaseSegment>> values, Collector<Tuple4<Long, Long, Boolean, BaseSegment>> out) throws Exception {
+                         ArrayList<Tuple4<Long, Long, Boolean, BaseSegment>> segmentList= new ArrayList<>();
+
+                         for(Tuple4<Long, Long, Boolean, BaseSegment> value : values) {
+                             segmentList.add(value);
+                         }
+
+                         if(segmentList.size() == 2) {
+                             if(BaseSegment.canMerge(segmentList.get(0).f3, segmentList.get(1).f3)) {
+                                 for (Tuple4<Long, Long, Boolean, BaseSegment> value : segmentList) {
+                                     out.collect(value);
+                                 }
+                             }
+                             else {
+                                 for (Tuple4<Long, Long, Boolean, BaseSegment> value : segmentList) {
+                                     value.f2 = false;
+                                     out.collect(value);
+                                 }
+                             }
+                         } else {
+                             for (Tuple4<Long, Long, Boolean, BaseSegment> value : segmentList) {
+                                 value.f2 = false;
+                                 out.collect(value);
+                             }
+                         }
+                     }
+                 });
+
+
+            //
+            // Step 2: Remove duplicate sections
+            //
+            // Only want to process each segment once per iteration. For segments with both merging and non-merging, keep the merging version.
+            // For segments with two merging intersections, keep the first segment-intersection relationship
+            // (the other intersection will get processed in the next iteration).
+            //
+            // =====A====*              0====C=====  0====D====  *====E=====
+            //              ====B====0
+            //
+
+            DataSet < Tuple4 < Long, Long, Boolean, BaseSegment >> deduplicatedSegments = cleanedSegmentsWithMergingIntersection
+                    .groupBy(1) // segmentId
+                    .reduceGroup(new GroupReduceFunction<Tuple4<Long, Long, Boolean, BaseSegment>, Tuple4<Long, Long, Boolean, BaseSegment>>() {
+                        @Override
+                        public void reduce(Iterable<Tuple4<Long, Long, Boolean, BaseSegment>> values, Collector<Tuple4<Long, Long, Boolean, BaseSegment>> out) throws Exception {
+                            Tuple4<Long, Long, Boolean, BaseSegment> savedSegment = null;
+
+                            for (Tuple4<Long, Long, Boolean, BaseSegment> value : values) {
+
+                                if (value.f2) {
+                                    // iterate through segments until we find a merging intersection -- keep it
+                                    savedSegment = value;
+                                    break;
+                                }
+                                // alternatively keep one non-merging segment
+                                savedSegment = value;
+                            }
+
+                            out.collect(savedSegment);
+                        }
+                    });
 
 
         //
@@ -309,6 +338,7 @@ public class BaseSegments implements Serializable {
         DataSet<BaseSegment> nonmergingSegments = deduplicatedSegments.flatMap(new FlatMapFunction<Tuple4<Long, Long, Boolean, BaseSegment>, BaseSegment>() {
             @Override
             public void flatMap(Tuple4<Long, Long, Boolean, BaseSegment> value, Collector<BaseSegment> out) throws Exception {
+
                 if(!value.f2)
                     out.collect(value.f3);
             }
@@ -386,8 +416,6 @@ public class BaseSegments implements Serializable {
                         BaseSegment baseSegment2 = null;
 
                         for(Tuple4<Long, Long, Boolean, BaseSegment> segmentIntersection : values) {
-                            if(segmentIntersection.f1 == 421137134l)
-                                System.out.println("found 421137134: merging " + segmentIntersection.f1);
 
                             count++;
 
@@ -405,6 +433,8 @@ public class BaseSegments implements Serializable {
                             if (mergedBaseSegment != null)
                                 // emmit merged segment if we found two valid segments
                                 out.collect(mergedBaseSegment);
+                            else
+                                System.out.println("Could not merge " + baseSegment1.getWayIds() + " with " + baseSegment2.getWayIds());
                         }
                         else if(count == 1 && baseSegment1 != null){
                             // emmit unmerged (but mergable) segment for processing in future iteration
@@ -422,17 +452,10 @@ public class BaseSegments implements Serializable {
                                                     .union(loopSegments);
 
 
-        // print solution set
-        DataSet<BaseSegment> filteredSegments = mergedSegments.filter(new FilterFunction<BaseSegment>() {
-            @Override
-            public boolean filter(BaseSegment value) throws Exception {
-                System.out.println(value.getFirstNode() + " to " + value.getLastNode() + ": " + value.getWayIds());
-                return true;
-            }
-        });
+
 
         // finalize iteration -- if mergedSegments is empty nothing left to merge.
-        segments = iterateSegments.closeWith(recombinedSegment, filteredSegments);
+        segments = iterateSegments.closeWith(recombinedSegment, mergedSegments);
 
 
     }
