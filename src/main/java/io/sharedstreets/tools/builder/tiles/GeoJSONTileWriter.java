@@ -1,4 +1,4 @@
-package io.sharedstreets.tools.builder.outputs.tiles;
+package io.sharedstreets.tools.builder.tiles;
 
 
 import org.apache.flink.core.fs.FSDataOutputStream;

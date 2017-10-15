@@ -1,4 +1,4 @@
-package io.sharedstreets.util;
+package io.sharedstreets.tools.builder.util.geo;
 
 
 import org.apache.flink.core.memory.DataInputView;

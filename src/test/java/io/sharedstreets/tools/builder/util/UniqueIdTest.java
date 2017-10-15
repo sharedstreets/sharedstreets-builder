@@ -1,4 +1,4 @@
-package io.sharedstreets.util;
+package io.sharedstreets.tools.builder.util;
 
 import org.junit.Test;
 

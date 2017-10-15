@@ -43,6 +43,8 @@ dependencies {
     compile "org.apache.flink:flink-java:${flinkversion}"
     compile "org.apache.flink:flink-clients_2.10:${flinkversion}"
     compile "com.google.protobuf:protobuf-java:${protobufversion}"
+    compile "com.jsoniter:jsoniter:0.9.15"
+    compile 'net.sf.geographiclib:GeographicLib-Java:1.46'
 
     testCompile "junit:junit:4.11"
 }
@@ -89,6 +91,9 @@ shadowJar {
     dependencies {
         include(dependency('com.esri.geometry:esri-geometry-api'))
         include(dependency(files('external/osmosis-osm-binary.jar')))
+        include(dependency('com.jsoniter:jsoniter'))
+        include(dependency('net.sf.geographiclib:GeographicLib-Java'))
+
     }
 }
 

@@ -2,19 +2,16 @@ package io.sharedstreets.tools.builder.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
-public class Intersection implements Serializable {
+public class WayIntersection implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
     public Long nodeId;
     public List<Long> terminatingWays;
     public List<Long> intersectingWays;
 
-    public Intersection(){
+    public WayIntersection(){
 
         terminatingWays = new ArrayList<Long>();
         intersectingWays = new ArrayList<Long>();

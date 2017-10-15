@@ -3,9 +3,9 @@ package io.sharedstreets.tools.builder.model;
 
 import com.esri.core.geometry.Geometry;
 import com.esri.core.geometry.Polyline;
-import io.sharedstreets.data.osm.model.NodePosition;
-import io.sharedstreets.data.osm.model.SpatialEntity;
-import io.sharedstreets.data.osm.model.Way;
+import io.sharedstreets.tools.builder.osm.model.NodePosition;
+import io.sharedstreets.tools.builder.osm.model.SpatialEntity;
+import io.sharedstreets.tools.builder.osm.model.Way;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.UUID;
@@ -45,7 +45,7 @@ public class BaseSegment extends SpatialEntity {
 
         // if oneway or roundabout (implicitly oneway or...ack!) both sections need to be going in the same direction
         if((baseSegment1.oneWay && baseSegment2.oneWay) || (baseSegment1.roundabout && baseSegment2.roundabout)){
-            if (!baseSegment2.getFirstNode().equals(baseSegment1.getLastNode()) || !baseSegment1.getFirstNode().equals(baseSegment2.getLastNode()))
+            if (!baseSegment2.getFirstNode().equals(baseSegment1.getLastNode()) && !baseSegment1.getFirstNode().equals(baseSegment2.getLastNode()))
                 return false;
         }
 
@@ -116,6 +116,21 @@ public class BaseSegment extends SpatialEntity {
         return false;
     }
 
+    public Way.ROAD_CLASS getRoadClass() {
+
+        Way.ROAD_CLASS roadClass = null;
+
+        for(WaySection waySection : this.waySections) {
+            if(roadClass == null || roadClass == waySection.roadClass)
+                roadClass = waySection.roadClass;
+            else {
+                roadClass = Way.ROAD_CLASS.ClassServiceOther;
+                break;
+            }
+        }
+        return roadClass;
+    }
+
     public Long getFirstNode() {
         return waySections[0].nodes[0].nodeId;
     }
@@ -124,15 +139,15 @@ public class BaseSegment extends SpatialEntity {
         return waySections[waySections.length - 1].nodes[waySections[waySections.length - 1].nodes.length -1].nodeId;
     }
 
-    public String getWayIds() {
-        String id[] = new String[this.waySections.length];
+    public Long[] getWayIds() {
+        Long ids[] = new Long[this.waySections.length];
 
         int i = 0;
         for(WaySection waySection : this.waySections) {
-            id[i] = waySection.wayId + "";
+            ids[i] = waySection.wayId;
             i++;
         }
-        return String.join( ",", id);
+        return ids;
     }
 
     @Override
@@ -152,8 +167,6 @@ public class BaseSegment extends SpatialEntity {
                     line.lineTo(node.lon, node.lat);
             }
         }
-
-
 
         return line;
     }

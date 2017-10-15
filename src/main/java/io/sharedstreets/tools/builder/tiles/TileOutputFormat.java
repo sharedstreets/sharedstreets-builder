@@ -1,4 +1,4 @@
-package io.sharedstreets.tools.builder.outputs.tiles;
+package io.sharedstreets.tools.builder.tiles;
 
 /*
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -111,6 +111,8 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
      */
     protected Path outputFilePath;
 
+    protected String formatType = "";
+
     /**
      * The write mode of the output.
      */
@@ -134,7 +136,8 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
 
     // --------------------------------------------------------------------------------------------
 
-    public TileOutputFormat(String path) {
+    public TileOutputFormat(String path, String formatType) {
+        this.formatType = formatType;
         this.writeMode = FileSystem.WriteMode.OVERWRITE;
         this.outputFilePath = new Path(path, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss.SSS")));
     }
@@ -279,7 +282,7 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
         if(!streams.containsKey(key))   {
 
             final FileSystem fs = this.outputFilePath.getFileSystem();
-            streams.put(key, fs.create(this.actualFilePath.suffix("/" + key + ".geojson"), writeMode));
+            streams.put(key, fs.create(this.actualFilePath.suffix("/" + key + "." + formatType +  ".geojson"), writeMode));
         }
 
         return streams.get(key);
