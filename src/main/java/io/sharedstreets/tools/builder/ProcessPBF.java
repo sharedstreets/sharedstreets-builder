@@ -80,23 +80,22 @@ public class ProcessPBF {
         File file = new File(inputFile);
         if(!file.exists()) {
             System.out.println( "Input file not found: "  + inputFile);
-            return;;
+            return;
         }
 
         if(!file.getName().endsWith(".pbf")) {
             System.out.println( "Input file must end with .pbf: "  + inputFile);
-            return;;
+            return;
         }
 
         File directory = new File(outputPath);
 
-        if(file.exists()) {
+        if(directory.exists()) {
             System.out.println( "Output directory already exists: "  + outputPath);
-            return;;
+            return;
         }
 
-
-        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment()
+        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         // load osm data from PBF input
         OSMDataStream dataStream = new OSMDataStream(inputFile, env);

@@ -45,6 +45,7 @@ dependencies {
     compile "com.google.protobuf:protobuf-java:${protobufversion}"
     compile "com.jsoniter:jsoniter:0.9.15"
     compile 'net.sf.geographiclib:GeographicLib-Java:1.46'
+    compile 'commons-cli:commons-cli:1.4'
 
     testCompile "junit:junit:4.11"
 }
@@ -80,20 +81,9 @@ idea {
 
 jar {
     manifest {
-        attributes 'Implementation-Title': 'osmrl-builder',
+        attributes 'Implementation-Title': 'sharedstreets-builder',
                 'Implementation-Version': version,
                 'Main-Class': 'io.sharedstreets.tools.builder.ProcessPBF'
-    }
-}
-
-// shadow jar, for use inside a flink cluster (does not include the flink stack)
-shadowJar {
-    dependencies {
-        include(dependency('com.esri.geometry:esri-geometry-api'))
-        include(dependency(files('external/osmosis-osm-binary.jar')))
-        include(dependency('com.jsoniter:jsoniter'))
-        include(dependency('net.sf.geographiclib:GeographicLib-Java'))
-
     }
 }
 
@@ -105,7 +95,7 @@ task allJars(type: ShadowJar) {
     transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) { resource = 'reference.conf' }
 
     manifest {
-        attributes 'Implementation-Title': 'osmrl-builder', 'Implementation-Version': version
+        attributes 'Implementation-Title': 'sharedstreets-builder', 'Implementation-Version': version
         attributes 'Main-Class': 'io.sharedstreets.tools.builder.ProcessPBF'
     }
 }
