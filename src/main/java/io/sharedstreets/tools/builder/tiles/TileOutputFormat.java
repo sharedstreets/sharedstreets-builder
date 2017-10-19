@@ -139,7 +139,7 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
     public TileOutputFormat(String path, String formatType) {
         this.formatType = formatType;
         this.writeMode = FileSystem.WriteMode.OVERWRITE;
-        this.outputFilePath = new Path(path, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss.SSS")));
+        this.outputFilePath = new Path(path, formatType);
     }
 
     public TileOutputFormat(Path outputPath) {

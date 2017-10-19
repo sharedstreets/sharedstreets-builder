@@ -460,6 +460,11 @@ public class BaseSegments implements Serializable {
 
 }
 
+
+// failed attempt at using delta iterations to merge semgents
+// unclear if flink allows changes to set membership during delta iterations
+// TODO re-explore this approach -- should be significantly faster as bulk iterations require touching all segments at end of each iteration
+
 /*
 DataSet<Tuple2<Long, BaseSegment>> mappedSegments = initialSegments.map(new MapFunction<BaseSegment, Tuple2<Long, BaseSegment>>() {
             @Override

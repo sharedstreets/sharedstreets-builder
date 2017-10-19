@@ -70,6 +70,9 @@ public class SharedStreets implements Serializable {
                         for (Tuple2<Long, SharedStreetsReference> value : values) {
                             intersection.osmNodeId = value.f0;
 
+                            if(intersection.id == null)
+                                intersection.id = SharedStreetsIntersection.generateId(intersection);
+
                             if (intersection.osmNodeId.equals(value.f1.geometry.metadata.getStartNodeId())) {
                                 outboundSegmentIds.add(value.f1.id);
                                 value.f1.geometry.startIntersectionId = intersection.id;
@@ -118,11 +121,20 @@ public class SharedStreets implements Serializable {
 
                 // copy start id from fromRef;
                 if (toRef != null && fromRef != null) {
+
                     toRef.geometry.startIntersectionId = fromRef.geometry.startIntersectionId;
 
                     if (toRef.locationReferences != null && toRef.locationReferences.length >= 2) {
-                        toRef.locationReferences[0].intersectionId = toRef.geometry.startIntersectionId;
-                        toRef.locationReferences[toRef.locationReferences.length - 1].intersectionId = toRef.geometry.endIntersectionId;
+
+                        if(toRef.id.equals(toRef.geometry.forwardReferenceId)) {
+                            toRef.locationReferences[0].intersectionId = toRef.geometry.startIntersectionId;
+                            toRef.locationReferences[toRef.locationReferences.length - 1].intersectionId = toRef.geometry.endIntersectionId;
+                        }
+                        else {
+                            toRef.locationReferences[0].intersectionId = toRef.geometry.endIntersectionId;
+                            toRef.locationReferences[toRef.locationReferences.length - 1].intersectionId = toRef.geometry.startIntersectionId;
+
+                        }
                     }
 
                     out.collect(toRef);
@@ -137,7 +149,7 @@ public class SharedStreets implements Serializable {
             }
         });
 
-        // get distinct geometries from refrences
+        // get distinct geometries from reference
 
         DataSet<Tuple2<UniqueId, SharedStreetsGeometry>> unfilteredGeometries = references
                 .map(new MapFunction<SharedStreetsReference, Tuple2<UniqueId, SharedStreetsGeometry>>() {
