@@ -33,7 +33,7 @@ public class JSONArrayTileWriter {
     }
 
     public void close() throws IOException {
-        this.writer.write("]\n}");
+        this.writer.write("]");
         this.writer.flush();
         this.writer.close();
     }

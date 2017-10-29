@@ -50,18 +50,18 @@ public class SharedStreetsReferenceJSONEncoder implements Encoder {
 
                     stream.writeMore();
                     stream.writeObjectField("bearing");
-                    stream.writeVal(ssr.locationReferences[i].bearing);
+                    stream.writeVal(Math.round(ssr.locationReferences[i].bearing*10.0)/10.0d);
                     stream.writeMore();
 
                     stream.writeObjectField("distanceToNextRef");
-                    stream.writeVal(ssr.locationReferences[i].distanceToNextRef);
+                    stream.writeVal(Math.round(ssr.locationReferences[i].distanceToNextRef*100.0)/100.0d); // ship centimeter precision
 
                 }
 
-                if(ssr.locationReferences[i].intersectionId != null) {
+                if(ssr.locationReferences[i].intersection != null) {
                     stream.writeMore();
                     stream.writeObjectField("intersectionId");
-                    stream.writeVal(ssr.locationReferences[i].intersectionId.toString());
+                    stream.writeVal(ssr.locationReferences[i].intersection.id.toString());
 
                 }
 

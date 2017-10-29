@@ -282,7 +282,7 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
         if(!streams.containsKey(key))   {
 
             final FileSystem fs = this.outputFilePath.getFileSystem();
-            streams.put(key, fs.create(this.actualFilePath.suffix("/" + key + "." + formatType +  ".geojson"), writeMode));
+            streams.put(key, fs.create(this.actualFilePath.suffix("/" + key + "." + formatType +  ".json"), writeMode));
         }
 
         return streams.get(key);

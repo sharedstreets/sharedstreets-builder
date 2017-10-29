@@ -69,7 +69,7 @@ public class SharedStreetsIntersectionJSONEncoder implements Encoder {
             stream.writeObjectField("coordinates");
             stream.writeArrayStart();
 
-            com.esri.core.geometry.Point point = ((Point)ssi.geometry);
+            com.esri.core.geometry.Point point = ssi.point;
 
             stream.writeVal(point.getX());
             stream.writeMore();

@@ -10,5 +10,6 @@ public class SharedStreetsLocationReference {
     public Double bearing;
     public Double distanceToNextRef;
 
-    public UniqueId intersectionId;
+    public SharedStreetsIntersection intersection;
+
 }

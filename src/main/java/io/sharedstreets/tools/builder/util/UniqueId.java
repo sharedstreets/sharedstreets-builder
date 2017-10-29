@@ -4,6 +4,7 @@ package io.sharedstreets.tools.builder.util;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -33,7 +34,7 @@ public class UniqueId implements Comparable {
     }
 
 
-    public static UniqueId generate() {
+    public static UniqueId generateRandom() {
         UniqueId uniqueId = new UniqueId();
         UUID uuid = UUID.randomUUID();
 
@@ -45,6 +46,26 @@ public class UniqueId implements Comparable {
 
         return uniqueId;
     }
+
+    public static UniqueId generateHash(String hashInput) {
+
+        try {
+            byte[] bytesOfMessage = hashInput.getBytes("UTF-8");
+            MessageDigest md = MessageDigest.getInstance("MD5");
+
+            UniqueId uniqueId = new UniqueId();
+            uniqueId.bytes = md.digest(bytesOfMessage);
+
+            return uniqueId;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
     public static UniqueId fromString(String data) {
         UniqueId uniqueId = new UniqueId();
 

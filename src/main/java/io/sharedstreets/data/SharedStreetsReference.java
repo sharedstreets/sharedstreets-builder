@@ -9,7 +9,6 @@ import io.sharedstreets.tools.builder.model.WaySection;
 import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.util.UniqueId;
 import io.sharedstreets.tools.builder.util.geo.Geography;
-//import io.sharedstreets.tools.builder.util.UniqueId;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
 
@@ -21,7 +20,6 @@ public class SharedStreetsReference implements TilableData, Serializable {
 
     public static double MAX_LPR_SEGMENT_LENGTH = 15000.0d; // meters
     public static double LPR_BEARING_OFFSET = 20.0d; // meters
-
 
 
     public enum FORM_OF_WAY {
@@ -50,8 +48,6 @@ public class SharedStreetsReference implements TilableData, Serializable {
     public FORM_OF_WAY formOfWay;
     public SharedStreetsLocationReference[] locationReferences;
 
-    public boolean backReference;
-
     public SharedStreetsGeometry geometry;
 
     private final static Geography GeoOp = new Geography();
@@ -70,12 +66,6 @@ public class SharedStreetsReference implements TilableData, Serializable {
         // generate single shared geometry for all references
         SharedStreetsGeometry geometry = new SharedStreetsGeometry(segment);
 
-        if(geometry.id.toString().equals("Pg3HPufXqVFyzoXUbwkrEP"))
-            System.out.print("Pg3HPufXqVFyzoXUbwkrEP");
-
-        if(geometry.id.toString().equals("RQTdXHWuBPkji7BvNX2vi9"))
-            System.out.print("RQTdXHWuBPkji7BvNX2vi9");
-
         FORM_OF_WAY formOfWay = SharedStreetsReference.getFormOfWay(segment);
 
         List<SharedStreetsReference> list = new ArrayList<>();
@@ -83,19 +73,14 @@ public class SharedStreetsReference implements TilableData, Serializable {
         SharedStreetsReference reference1 = new SharedStreetsReference();
 
         reference1.formOfWay = formOfWay;
-        reference1.backReference = false;
 
         List<SharedStreetsLocationReference> lprList = SharedStreetsReference.getLocationReferences(geometry, false);
         reference1.locationReferences = lprList.toArray(new SharedStreetsLocationReference[lprList.size()]);
         reference1.id = SharedStreetsReference.generateId(reference1);
 
         geometry.forwardReferenceId = reference1.id;
-
-        if(reference1.id.toString().equals("HXpwm5JYrHNaPEEE2fNrhA"))
-            System.out.print("HXpwm5JYrHNaPEEE2fNrhA");
-
-        if(reference1.id.toString().equals("HhE2Ed9ocwv6ZgiMEgjfdd"))
-            System.out.print("HhE2Ed9ocwv6ZgiMEgjfdd");
+        geometry.startIntersectionId = reference1.locationReferences[0].intersection.id;
+        geometry.endIntersectionId = reference1.locationReferences[reference1.locationReferences.length-1].intersection.id;
 
         reference1.geometry = geometry;
         list.add(reference1);
@@ -105,7 +90,6 @@ public class SharedStreetsReference implements TilableData, Serializable {
 
             SharedStreetsReference reference2 = new SharedStreetsReference();
             reference2.formOfWay = formOfWay;
-            reference1.backReference = true;
 
             lprList = SharedStreetsReference.getLocationReferences(geometry, true);
             reference2.locationReferences = lprList.toArray(new SharedStreetsLocationReference[lprList.size()]);
@@ -113,12 +97,6 @@ public class SharedStreetsReference implements TilableData, Serializable {
             reference2.id = SharedStreetsReference.generateId(reference2);
 
             geometry.backReferenceId = reference2.id;
-
-            if(reference2.id.toString().equals("HXpwm5JYrHNaPEEE2fNrhA"))
-                System.out.print("HXpwm5JYrHNaPEEE2fNrhA");
-
-            if(reference2.id.toString().equals("HhE2Ed9ocwv6ZgiMEgjfdd"))
-                System.out.print("HhE2Ed9ocwv6ZgiMEgjfdd");
 
             reference2.geometry = geometry;
 
@@ -156,6 +134,7 @@ public class SharedStreetsReference implements TilableData, Serializable {
 
         double lprSegmentLength = length / (lprCount - 1);
 
+        // build LPRs
         for(int i = 0; i < lprCount; i++){
 
             SharedStreetsLocationReference lpr = new SharedStreetsLocationReference();
@@ -186,6 +165,41 @@ public class SharedStreetsReference implements TilableData, Serializable {
 
                 // gets the bearing for the
                 lpr.bearing = GeoOp.azimuth(lpr.point, bearingPoint, 1.0);
+
+                // generate intersection for first LPR
+                if(i == 0) {
+                    SharedStreetsIntersection intersection = new SharedStreetsIntersection();
+                    intersection.point = lpr.point;
+
+                    if(!reverse)
+                        intersection.osmNodeId = geometry.metadata.getStartNodeId();
+                    else
+                        intersection.osmNodeId = geometry.metadata.getEndNodeId();
+
+                    intersection.id = SharedStreetsIntersection.generateId(intersection);
+
+                    if(intersection.id.toString().equals("An9anDc4mqLcL2ACkjPs5q"))
+                        System.out.print("An9anDc4mqLcL2ACkjPs5q");
+
+                    lpr.intersection = intersection;
+                }
+            }
+            else {
+                // build intersection for last LPR
+                SharedStreetsIntersection intersection = new SharedStreetsIntersection();
+                intersection.point = lpr.point;
+
+                if(!reverse)
+                    intersection.osmNodeId = geometry.metadata.getEndNodeId();
+                else
+                    intersection.osmNodeId = geometry.metadata.getStartNodeId();
+
+                intersection.id = SharedStreetsIntersection.generateId(intersection);
+
+                if(intersection.id.toString().equals("An9anDc4mqLcL2ACkjPs5q"))
+                    System.out.print("An9anDc4mqLcL2ACkjPs5q");
+
+                lpr.intersection = intersection;
             }
 
             referenceList.add(lpr);
@@ -239,17 +253,17 @@ public class SharedStreetsReference implements TilableData, Serializable {
     public static UniqueId generateId(SharedStreetsReference ssr) {
         String hashString = new String();
 
-        hashString = "" + ssr.formOfWay.value;
+        hashString = "Reference " + ssr.formOfWay.value;
 
         for(SharedStreetsLocationReference lr : ssr.locationReferences) {
-            hashString += String.format(",%.6f %.6f", lr.point.getX(), lr.point.getY());
+            hashString += String.format(" %.6f %.6f", lr.point.getX(), lr.point.getY());
             if(lr.bearing != null) {
-                hashString += String.format(",%.1f", lr.bearing);
-                hashString += String.format(",%.2f", lr.distanceToNextRef);
+                hashString += String.format(" %.1f", lr.bearing);
+                hashString += String.format(" %.3f", lr.distanceToNextRef);
             }
         }
 
-        return UniqueId.generateRandom();
+        return UniqueId.generateHash(hashString);
     }
 
 }
