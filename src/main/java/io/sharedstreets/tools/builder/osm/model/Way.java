@@ -13,7 +13,8 @@ public class Way extends SpatialEntity {
         ClassTertiary(4),
         ClassResidential(5),
         ClassUnclassified(6),
-        ClassServiceOther(7);
+        ClassService(7),
+        ClassOther(8);
 
         private final int value;
 
@@ -66,8 +67,10 @@ public class Way extends SpatialEntity {
             return ROAD_CLASS.ClassUnclassified;
         else if (fields.containsKey("highway") && fields.get("highway").toLowerCase().trim().startsWith("residential"))
             return ROAD_CLASS.ClassResidential;
+        else if (fields.containsKey("highway") && fields.get("highway").toLowerCase().trim().startsWith("service"))
+            return ROAD_CLASS.ClassService;
         else
-            return ROAD_CLASS.ClassServiceOther;
+            return ROAD_CLASS.ClassOther;
     }
 
     public boolean isRoundabout() {

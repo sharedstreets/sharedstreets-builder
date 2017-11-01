@@ -211,7 +211,7 @@ public class OSMDataStream {
                         if(!way.isHighway())
                             return;
 
-                        if(way.roadClass().getValue() > 6)
+                        if(way.roadClass().getValue() > 7)
                             return;
 
                         out.collect(new Tuple2<>(way.id, way));

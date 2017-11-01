@@ -148,59 +148,64 @@ public class SharedStreetsReference implements TilableData, Serializable {
 
             lpr.point = GeoOp.interpolate(path, fraction);
 
-            // last ref doesn't have bearing or dist to next ref
-            if(i + 1 < lprCount) {
+            // final lpr doesn't have a distance to next point or outbound bearing
+            if(i  < lprCount - 1) {
                 lpr.distanceToNextRef = lprSegmentLength;
 
-                Point bearingPoint;
+                Point outboundBearingPoint;
 
                 // for segments shorter than LPR_BEARING_OFFSET just the bearing of the entire segment
-                if(length > LPR_BEARING_OFFSET) {
+                if (length > LPR_BEARING_OFFSET) {
                     // get point 20m further along line
                     double bearingPointOffset = LPR_BEARING_OFFSET / length;
-                    bearingPoint = GeoOp.interpolate(path, (fraction + bearingPointOffset));
-                }
-                else
-                    bearingPoint = GeoOp.interpolate(path, 1.0);
+                    outboundBearingPoint = GeoOp.interpolate(path, (fraction + bearingPointOffset));
+                } else
+                    outboundBearingPoint = GeoOp.interpolate(path, 1.0);
 
                 // gets the bearing for the
-                lpr.bearing = GeoOp.azimuth(lpr.point, bearingPoint, 1.0);
-
-                // generate intersection for first LPR
-                if(i == 0) {
-                    SharedStreetsIntersection intersection = new SharedStreetsIntersection();
-                    intersection.point = lpr.point;
-
-                    if(!reverse)
-                        intersection.osmNodeId = geometry.metadata.getStartNodeId();
-                    else
-                        intersection.osmNodeId = geometry.metadata.getEndNodeId();
-
-                    intersection.id = SharedStreetsIntersection.generateId(intersection);
-
-                    if(intersection.id.toString().equals("An9anDc4mqLcL2ACkjPs5q"))
-                        System.out.print("An9anDc4mqLcL2ACkjPs5q");
-
-                    lpr.intersection = intersection;
-                }
+                lpr.outboundBearing = GeoOp.azimuth(lpr.point, outboundBearingPoint, 1.0);
             }
-            else {
-                // build intersection for last LPR
-                SharedStreetsIntersection intersection = new SharedStreetsIntersection();
-                intersection.point = lpr.point;
+
+            // initial lpr doesn't have an inbound bearing
+            if(i > 0) {
+                Point inboundBearingPoint;
+
+                // for segments shorter than LPR_BEARING_OFFSET just the bearing of the entire segment
+                if (length > LPR_BEARING_OFFSET) {
+                    // get point 20m back along line
+                    double bearingPointOffset = LPR_BEARING_OFFSET / length;
+                    inboundBearingPoint = GeoOp.interpolate(path, (fraction - bearingPointOffset));
+                } else
+                    inboundBearingPoint = GeoOp.interpolate(path, 0.0);
+
+                // gets the bearing for the
+                lpr.inboundBearing = GeoOp.azimuth(inboundBearingPoint, lpr.point, 1.0);
+            }
+
+
+            SharedStreetsIntersection intersection = new SharedStreetsIntersection();
+            intersection.point = lpr.point;
+
+            // generate intersection node relationships for first LPR
+            if(i == 0) {
+
+                if(!reverse)
+                    intersection.osmNodeId = geometry.metadata.getStartNodeId();
+                else
+                    intersection.osmNodeId = geometry.metadata.getEndNodeId();
+            }
+            else if(i == lprCount - 1) {
+                // generate intersection node relationships for last LPR
 
                 if(!reverse)
                     intersection.osmNodeId = geometry.metadata.getEndNodeId();
                 else
                     intersection.osmNodeId = geometry.metadata.getStartNodeId();
-
-                intersection.id = SharedStreetsIntersection.generateId(intersection);
-
-                if(intersection.id.toString().equals("An9anDc4mqLcL2ACkjPs5q"))
-                    System.out.print("An9anDc4mqLcL2ACkjPs5q");
-
-                lpr.intersection = intersection;
             }
+
+            intersection.id = SharedStreetsIntersection.generateId(intersection);
+
+            lpr.intersection = intersection;
 
             referenceList.add(lpr);
         }
@@ -257,9 +262,12 @@ public class SharedStreetsReference implements TilableData, Serializable {
 
         for(SharedStreetsLocationReference lr : ssr.locationReferences) {
             hashString += String.format(" %.6f %.6f", lr.point.getX(), lr.point.getY());
-            if(lr.bearing != null) {
-                hashString += String.format(" %.1f", lr.bearing);
+            if(lr.outboundBearing != null) {
+                hashString += String.format(" %.1f", lr.outboundBearing);
                 hashString += String.format(" %.3f", lr.distanceToNextRef);
+            }
+            if(lr.inboundBearing != null) {
+                hashString += String.format(" %.1f", lr.inboundBearing);
             }
         }
 

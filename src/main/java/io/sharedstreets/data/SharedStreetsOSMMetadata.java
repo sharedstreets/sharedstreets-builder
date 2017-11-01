@@ -82,7 +82,7 @@ public class SharedStreetsOSMMetadata implements TilableData {
             if(roadClass == null || roadClass == waySection.roadClass)
                 roadClass = waySection.roadClass;
             else {
-                roadClass = Way.ROAD_CLASS.ClassServiceOther;
+                roadClass = Way.ROAD_CLASS.ClassOther;
                 break;
             }
         }

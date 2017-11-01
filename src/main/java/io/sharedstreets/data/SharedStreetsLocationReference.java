@@ -7,7 +7,8 @@ public class SharedStreetsLocationReference {
 
     public int sequence; // sequential id for LPRs
     public Point point = new Point();
-    public Double bearing;
+    public Double inboundBearing;
+    public Double outboundBearing;
     public Double distanceToNextRef;
 
     public SharedStreetsIntersection intersection;
