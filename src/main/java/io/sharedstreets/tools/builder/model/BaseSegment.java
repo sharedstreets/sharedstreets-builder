@@ -157,14 +157,20 @@ public class BaseSegment extends SpatialEntity {
 
         boolean firstPosition = true;
 
+        long lastNodeId = -1;
         for(WaySection section : this.waySections) {
             for(NodePosition node : section.nodes) {
                 if(firstPosition == true) {
                     line.startPath(node.lon, node.lat);
                     firstPosition = false;
                 }
-                else
-                    line.lineTo(node.lon, node.lat);
+                else {
+                    // don't write duplicate nodes twice for adjoining way sections
+                    if(lastNodeId != node.nodeId)
+                        line.lineTo(node.lon, node.lat);
+                }
+
+                lastNodeId = node.nodeId;
             }
         }
 

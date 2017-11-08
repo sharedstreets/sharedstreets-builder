@@ -8,9 +8,11 @@ import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.util.UniqueId;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
-public class SharedStreetsOSMMetadata implements TilableData {
+import java.io.Serializable;
 
-    public class WaySectionMetadata {
+public class SharedStreetsOSMMetadata implements Serializable {
+
+    public class WaySectionMetadata implements Serializable {
 
         public Long wayId;
         public Way.ROAD_CLASS roadClass;
@@ -35,27 +37,13 @@ public class SharedStreetsOSMMetadata implements TilableData {
         }
     }
 
-
     public UniqueId geometryId;
     public WaySectionMetadata[] waySections;
 
 
-    public TileId titlId;
-
-
-    @JsonIgnore
-    @Override
-    public TileId getTileKey() {
-        if(titlId == null)
-            return null;
-
-        return titlId;
-    }
-
     public SharedStreetsOSMMetadata(SharedStreetsGeometry geometry, BaseSegment segment) {
 
         this.geometryId = geometry.id; // keeping reference for point data
-        this.titlId = geometry.getTileKey();
 
         waySections = new WaySectionMetadata[segment.waySections.length];
 

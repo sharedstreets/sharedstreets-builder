@@ -1,22 +1,11 @@
 package io.sharedstreets.tools.builder;
 
-import com.jsoniter.spi.JsoniterSpi;
-import io.sharedstreets.data.SharedStreetsGeometry;
-import io.sharedstreets.data.SharedStreetsIntersection;
-import io.sharedstreets.data.SharedStreetsOSMMetadata;
-import io.sharedstreets.data.SharedStreetsReference;
-import io.sharedstreets.data.outputs.SharedStreetsGeometryGeoJSONTileFormat;
-import io.sharedstreets.data.outputs.SharedStreetsIntersectionGeoJSONTileFormat;
-import io.sharedstreets.data.outputs.SharedStreetsOSMMetadataJSONEncoder;
-import io.sharedstreets.data.outputs.SharedStreetsReferenceJSONEncoder;
-import io.sharedstreets.tools.builder.tiles.JSONTileFormat;
+import io.sharedstreets.tools.builder.tiles.JSONTileOutputFormat;
 import io.sharedstreets.tools.builder.transforms.Intersections;
 import io.sharedstreets.tools.builder.osm.OSMDataStream;
 import io.sharedstreets.tools.builder.transforms.BaseSegments;
-import io.sharedstreets.tools.builder.transforms.SharedStreets;
+import io.sharedstreets.tools.builder.transforms.SharedStreetData;
 import org.apache.commons.cli.*;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 
 import org.slf4j.LoggerFactory;
@@ -51,10 +40,18 @@ public class ProcessPBF {
                 .withArgName("OUTPUT-DIR")
                 .create() );
 
+        options.addOption( OptionBuilder.withLongOpt( "zlevel" )
+                .withDescription( "tile z-level (default 10)" )
+                .hasArg()
+                .withArgName("Z-LEVEL")
+                .create() );
+
 
         String inputFile = "";
 
         String outputPath = "";
+
+        Integer zLevel = 10;
 
         try {
             // parse the command line arguments
@@ -68,6 +65,10 @@ public class ProcessPBF {
             if( line.hasOption( "output" ) ) {
                 // print the value of block-size
                 outputPath = line.getOptionValue( "output" );
+            }
+
+            if(line.hasOption("zlevel")){
+                zLevel = Integer.parseInt(line.getOptionValue("zlevel"));
             }
         }
         catch( Exception exp ) {
@@ -105,30 +106,13 @@ public class ProcessPBF {
         BaseSegments segments = new BaseSegments(dataStream, intersections);
 
         // build sharedstreets references, geometries, intersections and metadata
-        SharedStreets streets = new SharedStreets(segments);
+        SharedStreetData streets = new SharedStreetData(segments);
+
+        JSONTileOutputFormat outputFormat = new JSONTileOutputFormat(outputPath, false,  false);
+
+        streets.mergedData(zLevel).output(outputFormat);
 
 
-        // output sharedstreets data to json tiles
-        streets.geometries.output(new SharedStreetsGeometryGeoJSONTileFormat<SharedStreetsGeometry>(outputPath)).setParallelism(1);
-
-        streets.intersections.output(new SharedStreetsIntersectionGeoJSONTileFormat<SharedStreetsIntersection>(outputPath)).setParallelism(1);
-
-
-        JsoniterSpi.registerTypeEncoder(SharedStreetsReference.class, new SharedStreetsReferenceJSONEncoder());
-        streets.references.output(new JSONTileFormat<SharedStreetsReference>(outputPath, "reference")).setParallelism(1);
-
-
-        JsoniterSpi.registerTypeEncoder(SharedStreetsOSMMetadata.class, new SharedStreetsOSMMetadataJSONEncoder());
-        DataSet<SharedStreetsOSMMetadata> metadata = streets.geometries.map(new MapFunction<SharedStreetsGeometry, SharedStreetsOSMMetadata>() {
-            @Override
-            public SharedStreetsOSMMetadata map(SharedStreetsGeometry value) throws Exception {
-                return value.metadata;
-            }
-        });
-
-        metadata.output(new JSONTileFormat<SharedStreetsOSMMetadata>(outputPath, "metadata")).setParallelism(1);
-
-        //LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss.SSS")
         env.execute();
 
     }

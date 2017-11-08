@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public class UniqueId implements Comparable {
 
-    // TODO implement Flink Normlaized Key interfaces
+    // TODO implement Flink normalized key interfaces
 
     private static int BYTE_SIZE = 16;
 
@@ -34,18 +34,6 @@ public class UniqueId implements Comparable {
     }
 
 
-    public static UniqueId generateRandom() {
-        UniqueId uniqueId = new UniqueId();
-        UUID uuid = UUID.randomUUID();
-
-        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-
-        uniqueId.bytes = bb.array();
-
-        return uniqueId;
-    }
 
     public static UniqueId generateHash(String hashInput) {
 

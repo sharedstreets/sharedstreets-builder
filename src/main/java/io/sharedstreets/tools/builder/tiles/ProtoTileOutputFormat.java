@@ -19,26 +19,38 @@ package io.sharedstreets.tools.builder.tiles;
 */
 
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-
+import com.jsoniter.output.JsonStream;
+import com.jsoniter.spi.JsoniterSpi;
+import io.sharedstreets.data.SharedStreetsGeometry;
+import io.sharedstreets.data.SharedStreetsIntersection;
+import io.sharedstreets.data.SharedStreetsOSMMetadata;
+import io.sharedstreets.data.SharedStreetsReference;
+import io.sharedstreets.data.output.json.SharedStreetsGeometryJSONEncoder;
+import io.sharedstreets.data.output.json.SharedStreetsIntersectionJSONEncoder;
+import io.sharedstreets.data.output.json.SharedStreetsOSMMetadataJSONEncoder;
+import io.sharedstreets.data.output.json.SharedStreetsReferenceJSONEncoder;
+import io.sharedstreets.tools.builder.util.geo.TileId;
+import org.apache.commons.compress.utils.IOUtils;
+import org.apache.flink.annotation.Public;
+import org.apache.flink.api.common.io.CleanupWhenUnsuccessful;
+import org.apache.flink.api.common.io.FileOutputFormat;
+import org.apache.flink.api.common.io.InitializeOnMaster;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.configuration.ConfigConstants;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.GlobalConfiguration;
+import org.apache.flink.core.fs.FSDataInputStream;
+import org.apache.flink.core.fs.FSDataOutputStream;
+import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.core.fs.FileSystem.WriteMode;
+import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.flink.annotation.Public;
-import org.apache.flink.api.common.io.CleanupWhenUnsuccessful;
-import org.apache.flink.api.common.io.InitializeOnMaster;
-import org.apache.flink.api.common.io.RichOutputFormat;
-import org.apache.flink.configuration.GlobalConfiguration;
-import org.apache.flink.configuration.ConfigConstants;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.core.fs.FSDataOutputStream;
-import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.core.fs.Path;
-import org.apache.flink.core.fs.FileSystem.WriteMode;
+import java.io.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Vector;
 
 /**
  * The abstract base class for all Rich output formats that are file based. Contains the logic to
@@ -46,7 +58,7 @@ import org.apache.flink.core.fs.FileSystem.WriteMode;
  * file streams.
  */
 @Public
-public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implements InitializeOnMaster, CleanupWhenUnsuccessful {
+public class ProtoTileOutputFormat<IT> extends FileOutputFormat<IT> implements InitializeOnMaster, CleanupWhenUnsuccessful {
 
     private static final long serialVersionUID = 1L;
 
@@ -68,6 +80,8 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
     // --------------------------------------------------------------------------------------------
 
     private static WriteMode DEFAULT_WRITE_MODE;
+
+    private static String RECORD_DELIMITER = ",\n";
 
     private static OutputDirectoryMode DEFAULT_OUTPUT_DIRECTORY_MODE;
 
@@ -99,7 +113,7 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
     /**
      * The LOG for logging messages in this class.
      */
-    private static final Logger LOG = LoggerFactory.getLogger(TileOutputFormat.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ProtoTileOutputFormat.class);
 
     /**
      * The key under which the name of the target path is stored in the configuration.
@@ -110,8 +124,6 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
      * The path of the file to be written.
      */
     protected Path outputFilePath;
-
-    protected String formatType = "";
 
     /**
      * The write mode of the output.
@@ -136,36 +148,25 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
 
     // --------------------------------------------------------------------------------------------
 
-    public TileOutputFormat(String path, String formatType) {
-        this.formatType = formatType;
-        this.writeMode = FileSystem.WriteMode.OVERWRITE;
-        this.outputFilePath = new Path(path, formatType);
-    }
 
-    public TileOutputFormat(Path outputPath) {
-        this.outputFilePath = outputPath;
-    }
+    private int openCount = 0;
 
-    public void setOutputFilePath(Path path) {
-        if (path == null) {
-            throw new IllegalArgumentException("Output file path may not be null.");
-        }
+    private boolean verbose;
+    private  boolean metadata;
 
-        this.outputFilePath = path;
+    HashSet<String> recordTypes = new HashSet<String>();
+
+    public ProtoTileOutputFormat(String path, boolean verbose, boolean metadata) {
+        this.writeMode = WriteMode.OVERWRITE;
+        this.outputFilePath = new Path(path);
+        this.metadata = metadata;
+        this.verbose = verbose;
     }
 
     public Path getOutputFilePath() {
         return this.outputFilePath;
     }
 
-
-    public void setWriteMode(WriteMode mode) {
-        if (mode == null) {
-            throw new NullPointerException();
-        }
-
-        this.writeMode = mode;
-    }
 
     public WriteMode getWriteMode() {
         return this.writeMode;
@@ -178,10 +179,6 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
         }
 
         this.outputDirectoryMode = mode;
-    }
-
-    public OutputDirectoryMode getOutputDirectoryMode() {
-        return this.outputDirectoryMode;
     }
 
 
@@ -219,22 +216,9 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
 
     @Override
     public void open(int taskNumber, int numTasks) throws IOException {
-        if (taskNumber < 0 || numTasks < 1) {
-            throw new IllegalArgumentException("TaskNumber: " + taskNumber + ", numTasks: " + numTasks);
-        }
 
-        // TODO make parallelizable
-
-        if ( numTasks > 1) {
-            throw new IllegalArgumentException("Tile writer requires parallelism of 1.");
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Opening stream for output (" + (taskNumber+1) + "/" + numTasks + "). WriteMode=" + writeMode +
-                    ", OutputDirectoryMode=" + outputDirectoryMode);
-        }
-
-        this.streams = new HashMap<>();
+        if(this.streams == null)
+            this.streams = new HashMap<>();
 
         Path p = this.outputFilePath;
         if (p == null) {
@@ -265,24 +249,27 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
         }
 
         // Suffix the path with the parallel instance index, if needed
-        this.actualFilePath = (numTasks > 1 || outputDirectoryMode == OutputDirectoryMode.ALWAYS) ? p.suffix("/" + getDirectoryFileName(taskNumber)) : p;
+        this.actualFilePath = p;
 
+        // register json type encoders in open so parallel threads can
+        JsoniterSpi.registerTypeEncoder(SharedStreetsGeometry.class, new SharedStreetsGeometryJSONEncoder(false, false));
+        JsoniterSpi.registerTypeEncoder(SharedStreetsIntersection.class, new SharedStreetsIntersectionJSONEncoder());
+        JsoniterSpi.registerTypeEncoder(SharedStreetsReference.class, new SharedStreetsReferenceJSONEncoder());
+        JsoniterSpi.registerTypeEncoder(SharedStreetsOSMMetadata.class, new SharedStreetsOSMMetadataJSONEncoder());
 
 
         // at this point, the file creation must have succeeded, or an exception has been thrown
-        this.fileCreated = true;
+        this.openCount++;
     }
 
-    protected String getDirectoryFileName(int taskNumber) {
-        return Integer.toString(taskNumber + 1);
-    }
 
-    public FSDataOutputStream getStream(String key) throws IOException {
 
-        if(!streams.containsKey(key))   {
+    private FSDataOutputStream getStream(String key) throws IOException {
+
+        if(!streams.containsKey(key)) {
 
             final FileSystem fs = this.outputFilePath.getFileSystem();
-            streams.put(key, fs.create(this.actualFilePath.suffix("/" + key + "." + formatType +  ".json"), writeMode));
+            streams.put(key, fs.create(this.actualFilePath.suffix("/" + key), writeMode));
         }
 
         return streams.get(key);
@@ -290,13 +277,104 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
 
     @Override
     public void close() throws IOException {
-        for(FSDataOutputStream stream : streams.values()) {
-            final FSDataOutputStream s = stream;
-            if (s != null) {
-                s.close();
+
+        openCount--;
+
+        HashSet<String> tileIds = new HashSet<String>();
+
+        // close temporary output streams
+        for (String key : streams.keySet()) {
+            streams.get(key).flush();
+            streams.get(key).close();
+
+            tileIds.add(key.split("\\.")[0]);
+        }
+
+
+        // merge streams...
+        if(openCount == 0 && recordTypes.size() == 3) {
+
+            final FileSystem fs = this.outputFilePath.getFileSystem();
+
+
+            for (String id : tileIds) {
+
+                FSDataOutputStream mergedOutput = fs.create(this.actualFilePath.suffix("/" + id + ".json"), writeMode);
+
+                Vector<InputStream> streams = new Vector<InputStream>();
+
+                InputStream geometriesObj = new ByteArrayInputStream("{\"geometries\": {".getBytes("UTF-8"));
+                streams.add(geometriesObj);
+
+                FSDataInputStream geometries = fs.open(this.actualFilePath.suffix("/" + id + ".SharedStreetsGeometry"));
+                streams.add(geometries);
+
+                // only encode intersections in verbose output -- can be reconstructed from referencesr
+                FSDataInputStream intersections = fs.open(this.actualFilePath.suffix("/" + id + ".SharedStreetsIntersection"));
+                if(verbose) {
+                    InputStream inersectionsObj = new ByteArrayInputStream("},\n\"intersections\":{".getBytes("UTF-8"));
+                    streams.add(inersectionsObj);
+                    streams.add(intersections);
+                }
+
+                InputStream referencesObj = new ByteArrayInputStream("},\"references\":{".getBytes("UTF-8"));
+                streams.add(referencesObj);
+
+                FSDataInputStream references = fs.open(this.actualFilePath.suffix("/" + id + ".SharedStreetsReference"));
+                streams.add(references);
+
+                InputStream closeObj = new ByteArrayInputStream("}}".getBytes("UTF-8"));
+                streams.add(closeObj);
+
+
+                SequenceInputStream mergedStream = new SequenceInputStream(streams.elements());
+
+                IOUtils.copy(mergedStream, mergedOutput);
+
+                mergedOutput.flush();
+                mergedOutput.close();
+
+                references.close();
+                intersections.close();
+                geometries.close();
+
+                // clean up temp files
+                fs.delete(this.actualFilePath.suffix("/" + id + ".SharedStreetsReference"), false);
+                fs.delete(this.actualFilePath.suffix("/" + id + ".SharedStreetsIntersection"), false);
+                fs.delete(this.actualFilePath.suffix("/" + id + ".SharedStreetsGeometry"), false);
+
+
+
             }
         }
-        streams.clear();
+
+    }
+
+    @Override
+    public void writeRecord(IT record) throws IOException {
+
+        if(record instanceof Tuple2 && ((Tuple2) record).f1 instanceof TilableData) {
+
+            TileId id = (TileId)((Tuple2) record).f0;
+            TilableData data = (TilableData)((Tuple2) record).f1;
+
+            String recordType = data.getClass().getSimpleName().toString();
+            recordTypes.add(recordType);
+
+            FSDataOutputStream stream = getStream(id + "." + recordType);
+
+            String recordString = "";
+
+            // only write delimiter if not first record
+            if(stream.getPos() > 0)
+                 recordString += RECORD_DELIMITER;
+
+
+            recordString += "\""+ data.getId() + "\":" +  JsonStream.serialize(data);
+
+            stream.write(recordString.getBytes("UTF-8"));
+        }
+
     }
 
     /**
@@ -306,32 +384,7 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
      */
     @Override
     public void initializeGlobal(int parallelism) throws IOException {
-        final Path path = getOutputFilePath();
-        final FileSystem fs = path.getFileSystem();
-
-        // only distributed file systems can be initialized at start-up time.
-        if (fs.isDistributedFS()) {
-
-            final WriteMode writeMode = getWriteMode();
-            final OutputDirectoryMode outDirMode = getOutputDirectoryMode();
-
-            if (parallelism == 1 && outDirMode == OutputDirectoryMode.PARONLY) {
-                // output is not written in parallel and should be written to a single file.
-                // prepare distributed output path
-                if(!fs.initOutPathDistFS(path, writeMode, false)) {
-                    // output preparation failed! Cancel task.
-                    throw new IOException("Output path could not be initialized.");
-                }
-
-            } else {
-                // output should be written to a directory
-
-                // only distributed file systems can be initialized at start-up time.
-                if(!fs.initOutPathDistFS(path, writeMode, true)) {
-                    throw new IOException("Output directory could not be created.");
-                }
-            }
-        }
+        // no-op TODO handle distributed FS?
     }
 
     @Override
@@ -354,4 +407,6 @@ public abstract class TileOutputFormat<IT> extends RichOutputFormat<IT> implemen
             }
         }
     }
+
+
 }

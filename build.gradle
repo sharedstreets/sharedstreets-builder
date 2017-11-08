@@ -6,7 +6,7 @@ buildscript {
     repositories {  jcenter()
                     mavenCentral()}
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.1'
         //classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
     } //  Note PF : this plugin does not support resource transformation (needed for akka configuration files
 }
@@ -28,14 +28,16 @@ repositories {
     mavenLocal()
 }
 
+
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
-def flinkversion = "1.3.1"
+def flinkversion = "1.3.2"
 def protobufversion = "3.4.0"
 
 dependencies {
+
 
     compile 'org.slf4j:slf4j-api:1.7.5'
     compile files('external/osmosis-osm-binary.jar')
@@ -49,6 +51,8 @@ dependencies {
 
     testCompile "junit:junit:4.11"
 }
+
+
 
 //protobuf {
 //    protoc {
@@ -79,12 +83,30 @@ idea {
     }
 }
 
+
+
 jar {
-    manifest {
-        attributes 'Implementation-Title': 'sharedstreets-builder',
-                'Implementation-Version': version,
-                'Main-Class': 'io.sharedstreets.tools.builder.ProcessPBF'
+    manifest { attributes 'Main-Class': 'io.sharedstreets.tools.builder.ProcessPBF' }
+}
+
+// shadow jar, for use inside a flink cluster (does not include the flink stack)
+shadowJar {
+    
+    dependencies {
+
+        include(dependency('org.slf4j:slf4j-api'))
+        include(dependency(files('external/osmosis-osm-binary.jar')))
+        include(dependency('com.esri.geometry:esri-geometry-api'))
+        include(dependency('com.jsoniter:jsoniter'))
+        include(dependency('net.sf.geographiclib:GeographicLib-Java'))
+        include(dependency('commons-cli:commons-cli'))
+        include(dependency('org.apache.flink:flink-java'))
+        include(dependency('org.apache.flink:flink-clients_2.10'))
+
     }
+
+    relocate 'google.protobuf', 'io.sharedstreets.shadow.protobuf'
+    relocate 'com.google.protobuf', 'io.sharedstreets.shadow.protobuf'
 }
 
 // this task generate a jar bundle that include all the flink stack,

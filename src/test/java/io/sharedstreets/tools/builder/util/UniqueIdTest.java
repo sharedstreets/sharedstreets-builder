@@ -10,7 +10,7 @@ public class UniqueIdTest {
     @Test
     public void evaluate() {
 
-        UniqueId uniqueId1 = UniqueId.generate();
+        UniqueId uniqueId1 = UniqueId.generateHash("ertesre");
 
         String idStr = uniqueId1.toString();
 

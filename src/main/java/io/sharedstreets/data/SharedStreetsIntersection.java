@@ -1,10 +1,16 @@
 package io.sharedstreets.data;
 
 import com.esri.core.geometry.Point;
+import com.jsoniter.annotation.JsonIgnore;
+import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.util.UniqueId;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
-public class SharedStreetsIntersection implements Comparable {
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
+
+public class SharedStreetsIntersection extends TilableData implements Comparable, Serializable {
 
     public UniqueId id;
     public Long osmNodeId;
@@ -14,12 +20,19 @@ public class SharedStreetsIntersection implements Comparable {
 
     // TODO this is where turn restrictions go...
 
-    public SharedStreetsIntersection() {
-
+    @Override
+    @JsonIgnore
+    public String getId() {
+        return this.id.toString();
     }
 
-    public TileId getTileKey() {
-        return TileId.lonLatToTileId(this.point.getX(), this.point.getY());
+    @JsonIgnore
+    public Set<TileId> getTileKeys(int zLevel) {
+        HashSet<TileId> tileIdSet = new HashSet<>();
+
+        tileIdSet.add(TileId.lonLatToTileId(zLevel, point.getX(), point.getY()));
+
+        return tileIdSet;
     }
 
     public static UniqueId generateId(SharedStreetsIntersection ssi) {

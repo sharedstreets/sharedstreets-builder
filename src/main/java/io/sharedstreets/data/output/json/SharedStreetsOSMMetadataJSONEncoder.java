@@ -1,4 +1,4 @@
-package io.sharedstreets.data.outputs;
+package io.sharedstreets.data.output.json;
 
 import com.jsoniter.output.JsonStream;
 import com.jsoniter.spi.Encoder;

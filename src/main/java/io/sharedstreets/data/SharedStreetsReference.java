@@ -3,6 +3,7 @@ package io.sharedstreets.data;
 
 import com.esri.core.geometry.Point;
 import com.esri.core.geometry.Polyline;
+import com.jsoniter.annotation.JsonIgnore;
 import io.sharedstreets.tools.builder.osm.model.Way;
 import io.sharedstreets.tools.builder.model.BaseSegment;
 import io.sharedstreets.tools.builder.model.WaySection;
@@ -14,9 +15,11 @@ import io.sharedstreets.tools.builder.util.geo.TileId;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class SharedStreetsReference implements TilableData, Serializable {
+public class SharedStreetsReference extends TilableData implements Serializable {
 
     public static double MAX_LPR_SEGMENT_LENGTH = 15000.0d; // meters
     public static double LPR_BEARING_OFFSET = 20.0d; // meters
@@ -53,12 +56,22 @@ public class SharedStreetsReference implements TilableData, Serializable {
     private final static Geography GeoOp = new Geography();
 
     @Override
-    public TileId getTileKey() {
-        if(locationReferences == null || locationReferences.length < 2) {
-            return null;
+    @JsonIgnore
+    public String getId() {
+        return this.id.toString();
+    }
+
+    @Override
+    @JsonIgnore
+    public Set<TileId> getTileKeys(int zLevel) {
+        HashSet<TileId> tileIdSet = new HashSet<>();
+
+        for(int i = 0; i < locationReferences.length; i++) {
+
+            tileIdSet.add(TileId.lonLatToTileId(zLevel, locationReferences[i].point.getX(), locationReferences[i].point.getY()));
         }
 
-        return TileId.lonLatToTileId(locationReferences[0].point.getX(), locationReferences[0].point.getY());
+        return tileIdSet;
     }
 
     public static List<SharedStreetsReference> getSharedStreetsReferences(BaseSegment segment) {
@@ -263,8 +276,8 @@ public class SharedStreetsReference implements TilableData, Serializable {
         for(SharedStreetsLocationReference lr : ssr.locationReferences) {
             hashString += String.format(" %.6f %.6f", lr.point.getX(), lr.point.getY());
             if(lr.outboundBearing != null) {
-                hashString += String.format(" %.1f", lr.outboundBearing);
-                hashString += String.format(" %.3f", lr.distanceToNextRef);
+                hashString += String.format(" %d", Math.round(lr.outboundBearing));
+                hashString += String.format(" %d", Math.round(lr.distanceToNextRef));
             }
             if(lr.inboundBearing != null) {
                 hashString += String.format(" %.1f", lr.inboundBearing);

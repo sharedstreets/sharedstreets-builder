@@ -3,9 +3,12 @@ package io.sharedstreets.tools.builder.tiles;
 
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
-public interface TilableData {
+import java.util.Set;
 
+public abstract class TilableData {
 
-    public TileId getTileKey();
+    public abstract String getId();
+
+    public abstract Set<TileId> getTileKeys(int zLevel);
 
 }

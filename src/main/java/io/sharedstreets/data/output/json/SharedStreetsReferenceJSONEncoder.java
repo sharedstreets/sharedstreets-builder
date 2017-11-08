@@ -1,4 +1,4 @@
-package io.sharedstreets.data.outputs;
+package io.sharedstreets.data.output.json;
 
 import com.jsoniter.output.JsonStream;
 import com.jsoniter.spi.Encoder;
@@ -14,10 +14,6 @@ public class SharedStreetsReferenceJSONEncoder implements Encoder {
             SharedStreetsReference ssr = (SharedStreetsReference) obj;
 
             stream.writeObjectStart();
-
-            stream.writeObjectField("id");
-            stream.writeVal(ssr.id.toString());
-            stream.writeMore();
 
             stream.writeObjectField("geometryId");
             stream.writeVal(ssr.geometry.id.toString());
@@ -35,10 +31,6 @@ public class SharedStreetsReferenceJSONEncoder implements Encoder {
             for(int i = 0; i < ssr.locationReferences.length; i++) {
                 stream.writeObjectStart();
 
-                stream.writeObjectField("sequence");
-                stream.writeVal(ssr.locationReferences[i].sequence);
-                stream.writeMore();
-
                 stream.writeObjectField("point");
                     stream.writeArrayStart();
                         stream.writeVal(ssr.locationReferences[i].point.getX());
@@ -50,7 +42,7 @@ public class SharedStreetsReferenceJSONEncoder implements Encoder {
 
                     stream.writeMore();
                     stream.writeObjectField("outboundBearing");
-                    stream.writeVal(Math.round(ssr.locationReferences[i].outboundBearing*10.0)/10.0d);
+                    stream.writeVal(Math.round(ssr.locationReferences[i].outboundBearing));
                     stream.writeMore();
 
                     stream.writeObjectField("distanceToNextRef");
@@ -62,7 +54,7 @@ public class SharedStreetsReferenceJSONEncoder implements Encoder {
 
                     stream.writeMore();
                     stream.writeObjectField("inboundBearing");
-                    stream.writeVal(Math.round(ssr.locationReferences[i].inboundBearing*10.0)/10.0d);
+                    stream.writeVal(Math.round(ssr.locationReferences[i].inboundBearing));
 
                 }
 
