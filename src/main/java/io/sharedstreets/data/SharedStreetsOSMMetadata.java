@@ -1,6 +1,8 @@
 package io.sharedstreets.data;
 
+import com.google.protobuf.ByteString;
 import com.jsoniter.annotation.JsonIgnore;
+import io.sharedstreets.data.output.proto.SharedStreetsProto;
 import io.sharedstreets.tools.builder.osm.model.Way;
 import io.sharedstreets.tools.builder.model.BaseSegment;
 import io.sharedstreets.tools.builder.model.WaySection;
@@ -8,6 +10,8 @@ import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.util.UniqueId;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 
 public class SharedStreetsOSMMetadata implements Serializable {
@@ -40,6 +44,42 @@ public class SharedStreetsOSMMetadata implements Serializable {
     public UniqueId geometryId;
     public WaySectionMetadata[] waySections;
 
+
+    public String getType() {
+        return "metadata";
+    }
+
+    public byte[] toBinary() throws IOException {
+
+        SharedStreetsProto.SharedStreetsMetadata.Builder metadata = SharedStreetsProto.SharedStreetsMetadata.newBuilder();
+
+        metadata.setGeometryID(this.geometryId.toString());
+
+        SharedStreetsProto.OSMMetadata.Builder osmMetadata = SharedStreetsProto.OSMMetadata.newBuilder();
+
+        for(SharedStreetsOSMMetadata.WaySectionMetadata waySectionMetadata : this.waySections) {
+            SharedStreetsProto.WaySection.Builder waySection = SharedStreetsProto.WaySection.newBuilder();
+
+            waySection.setWayId(waySectionMetadata.wayId);
+            waySection.setRoadClass(SharedStreetsProto.RoadClass.forNumber(waySectionMetadata.roadClass.getValue()));
+            waySection.setOneWay(waySectionMetadata.oneWay);
+            waySection.setLink(waySectionMetadata.link);
+            waySection.setRoundabout(waySectionMetadata.roundabout);
+
+            for(long nodeId : waySectionMetadata.nodeIds) {
+                waySection.addNodeIds(nodeId);
+            }
+
+            osmMetadata.addWaySections(waySection);
+        }
+
+        metadata.setOsmMetadata(osmMetadata);
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        metadata.build().writeDelimitedTo(bytes);
+
+        return bytes.toByteArray();
+    }
 
     public SharedStreetsOSMMetadata(SharedStreetsGeometry geometry, BaseSegment segment) {
 

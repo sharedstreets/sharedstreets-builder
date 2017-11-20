@@ -3,12 +3,16 @@ package io.sharedstreets.data;
 
 import com.esri.core.geometry.Geometry;
 import com.esri.core.geometry.Polyline;
+import com.google.protobuf.ByteString;
 import com.jsoniter.annotation.JsonIgnore;
+import io.sharedstreets.data.output.proto.SharedStreetsProto;
 import io.sharedstreets.tools.builder.model.BaseSegment;
 import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 import io.sharedstreets.tools.builder.util.UniqueId;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -36,6 +40,38 @@ public class SharedStreetsGeometry extends TilableData implements Serializable {
         this.id = SharedStreetsGeometry.generateId(this);
 
         this.metadata = new SharedStreetsOSMMetadata(this, segment);
+    }
+
+    public String getType() {
+        return "geometry";
+    }
+
+    public byte[] toBinary() throws IOException {
+
+        SharedStreetsProto.SharedStreetsGeometry.Builder geometryBuilder = SharedStreetsProto.SharedStreetsGeometry.newBuilder();
+        geometryBuilder.setId(this.id.toString());
+
+        geometryBuilder.setFromIntersectionId(this.startIntersectionId.toString());
+        geometryBuilder.setToIntersectionId(this.endIntersectionId.toString());
+
+        geometryBuilder.setForwardReferenceId(this.forwardReferenceId.toString());
+
+        if(this.backReferenceId != null)
+            geometryBuilder.setBackReferenceId(this.backReferenceId.toString());
+
+        geometryBuilder.setRoadClass(SharedStreetsProto.RoadClass.forNumber(this.metadata.getRoadClass().getValue()));
+
+        for(int i = 0; i < ((Polyline)geometry).getPointCount(); i++) {
+
+            geometryBuilder.addLatlons((float)((Polyline)geometry).getPoint(i).getY()); // lat
+            geometryBuilder.addLatlons((float)((Polyline)geometry).getPoint(i).getX()); // lons
+
+        }
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        geometryBuilder.build().writeDelimitedTo(bytes);
+
+        return bytes.toByteArray();
     }
 
     @Override

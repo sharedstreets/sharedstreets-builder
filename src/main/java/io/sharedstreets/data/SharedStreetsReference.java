@@ -3,7 +3,10 @@ package io.sharedstreets.data;
 
 import com.esri.core.geometry.Point;
 import com.esri.core.geometry.Polyline;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Int32Value;
 import com.jsoniter.annotation.JsonIgnore;
+import io.sharedstreets.data.output.proto.SharedStreetsProto;
 import io.sharedstreets.tools.builder.osm.model.Way;
 import io.sharedstreets.tools.builder.model.BaseSegment;
 import io.sharedstreets.tools.builder.model.WaySection;
@@ -13,6 +16,8 @@ import io.sharedstreets.tools.builder.util.geo.Geography;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,6 +60,50 @@ public class SharedStreetsReference extends TilableData implements Serializable 
 
     private final static Geography GeoOp = new Geography();
 
+    public String getType() {
+        return "reference";
+    }
+
+    public byte[] toBinary() throws IOException {
+
+        SharedStreetsProto.SharedStreetsReference.Builder reference = SharedStreetsProto.SharedStreetsReference.newBuilder();
+
+        reference.setId(this.id.toString());
+
+        reference.setFormOfWay(SharedStreetsProto.SharedStreetsReference.FormOfWay.forNumber(this.formOfWay.getValue()));
+        reference.setGeometryId(this.geometry.id.toString());
+
+        for(SharedStreetsLocationReference locationReference : this.locationReferences) {
+
+            SharedStreetsProto.LocationReference.Builder lr = SharedStreetsProto.LocationReference.newBuilder();
+
+            lr.setIntersectionId(locationReference.intersection.id.toString());
+
+            // optional values in proto3 require google Int32Value wrapper classes -- ugh!
+
+            if(locationReference.distanceToNextRef != null)
+                lr.setDistanceToNextRef((int)Math.round(locationReference.distanceToNextRef * 100));
+
+            if(locationReference.inboundBearing != null)
+                lr.setInboundBearing((int)Math.round(locationReference.inboundBearing));
+
+            if(locationReference.outboundBearing != null)
+                lr.setOutboundBearing((int)Math.round(locationReference.outboundBearing));
+
+
+            lr.setLat((float)locationReference.point.getX());
+            lr.setLon((float)locationReference.point.getY());
+
+            reference.addLocationReferences(lr);
+        }
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        reference.build().writeDelimitedTo(bytes);
+
+        return bytes.toByteArray();
+
+    }
+
     @Override
     @JsonIgnore
     public String getId() {
@@ -79,9 +128,12 @@ public class SharedStreetsReference extends TilableData implements Serializable 
         // generate single shared geometry for all references
         SharedStreetsGeometry geometry = new SharedStreetsGeometry(segment);
 
-        FORM_OF_WAY formOfWay = SharedStreetsReference.getFormOfWay(segment);
-
         List<SharedStreetsReference> list = new ArrayList<>();
+
+        if(((Polyline)geometry.geometry).getPointCount() < 2)
+            return list;
+
+        FORM_OF_WAY formOfWay = SharedStreetsReference.getFormOfWay(segment);
 
         SharedStreetsReference reference1 = new SharedStreetsReference();
 
@@ -277,7 +329,7 @@ public class SharedStreetsReference extends TilableData implements Serializable 
             hashString += String.format(" %.6f %.6f", lr.point.getX(), lr.point.getY());
             if(lr.outboundBearing != null) {
                 hashString += String.format(" %d", Math.round(lr.outboundBearing));
-                hashString += String.format(" %d", Math.round(lr.distanceToNextRef));
+                hashString += String.format(" %d", Math.round(lr.distanceToNextRef * 100)); // store in centimeter
             }
             if(lr.inboundBearing != null) {
                 hashString += String.format(" %.1f", lr.inboundBearing);

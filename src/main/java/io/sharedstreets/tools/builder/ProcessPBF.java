@@ -1,13 +1,17 @@
 package io.sharedstreets.tools.builder;
 
 import io.sharedstreets.tools.builder.tiles.JSONTileOutputFormat;
+import io.sharedstreets.tools.builder.tiles.ProtoTileOutputFormat;
+import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.transforms.Intersections;
 import io.sharedstreets.tools.builder.osm.OSMDataStream;
 import io.sharedstreets.tools.builder.transforms.BaseSegments;
 import io.sharedstreets.tools.builder.transforms.SharedStreetData;
+import io.sharedstreets.tools.builder.util.geo.TileId;
 import org.apache.commons.cli.*;
 import org.apache.flink.api.java.ExecutionEnvironment;
 
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -51,7 +55,7 @@ public class ProcessPBF {
 
         String outputPath = "";
 
-        Integer zLevel = 10;
+        Integer zLevel = 11;
 
         try {
             // parse the command line arguments
@@ -108,7 +112,7 @@ public class ProcessPBF {
         // build sharedstreets references, geometries, intersections and metadata
         SharedStreetData streets = new SharedStreetData(segments);
 
-        JSONTileOutputFormat outputFormat = new JSONTileOutputFormat(outputPath, false,  false);
+        ProtoTileOutputFormat outputFormat = new ProtoTileOutputFormat<Tuple2<TileId, TilableData>>(outputPath);
 
         streets.mergedData(zLevel).output(outputFormat);
 

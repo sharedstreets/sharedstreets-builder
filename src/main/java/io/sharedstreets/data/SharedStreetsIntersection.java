@@ -1,11 +1,15 @@
 package io.sharedstreets.data;
 
 import com.esri.core.geometry.Point;
+import com.google.protobuf.ByteString;
 import com.jsoniter.annotation.JsonIgnore;
+import io.sharedstreets.data.output.proto.SharedStreetsProto;
 import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.util.UniqueId;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,6 +46,37 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
 
         return UniqueId.generateHash(hashString);
 
+    }
+
+    public String getType() {
+        return "intersection";
+    }
+
+    public byte[] toBinary() throws IOException {
+
+        SharedStreetsProto.SharedStreetsIntersection.Builder intersection =  SharedStreetsProto.SharedStreetsIntersection.newBuilder();
+
+        intersection.setId(this.id.toString());
+
+        intersection.setNodeId(this.osmNodeId);
+
+        intersection.setLat((float)this.point.getX());
+        intersection.setLat((float)this.point.getY());
+
+        for(UniqueId inboundId : this.inboundSegmentIds) {
+
+            intersection.addInboundReferenceIds(inboundId.toString());
+        }
+
+        for(UniqueId outboundId : this.outboundSegmentIds) {
+
+            intersection.addInboundReferenceIds(outboundId.toString());
+        }
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        intersection.build().writeDelimitedTo(bytes);
+
+        return bytes.toByteArray();
     }
 
     @Override
