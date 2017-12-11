@@ -14,6 +14,6 @@ The builder application is built on Apache Flink. If memory requirements exceed 
 
 **Roadmap**
 
-- *v0.1:* OSM support
+- [*v0.1:*](https://github.com/sharedstreets/sharedstreets-builder/releases/tag/0.1-preview) OSM support
 - *v0.2:* Shapefile support 
 - *v0.3:* Compute SharedStreets reference deltas between various input sources.
