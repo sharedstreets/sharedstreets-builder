@@ -91,8 +91,8 @@ public class SharedStreetsReference extends TilableData implements Serializable 
                 lr.setOutboundBearing((int)Math.round(locationReference.outboundBearing));
 
 
-            lr.setLat((float)locationReference.point.getX());
-            lr.setLon((float)locationReference.point.getY());
+            lr.setLat((float)locationReference.point.getY());
+            lr.setLon((float)locationReference.point.getX());
 
             reference.addLocationReferences(lr);
         }

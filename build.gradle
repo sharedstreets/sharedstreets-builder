@@ -109,8 +109,7 @@ shadowJar {
     relocate 'com.google.protobuf', 'io.sharedstreets.shadow.protobuf'
 }
 
-// this task generate a jar bundle that include all th:q
-/e flink stack,
+// this task generate a jar bundle that include all the flink stack,
 // and permit to use the soft from a command line
 task allJars(type: ShadowJar) {
     from sourceSets.main.output
