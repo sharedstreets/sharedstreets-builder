@@ -357,7 +357,7 @@ public class BaseSegments implements Serializable {
         });
 
         //
-        // Step 2: Remove loop sections
+        // Step 4: Remove loop sections
         //
         // Input ways:
         //
@@ -398,7 +398,7 @@ public class BaseSegments implements Serializable {
 
 
         //
-        // Step 4: Merge sections
+        // Step 5: Merge sections
         //
         // Merged sections:
         //
@@ -445,7 +445,7 @@ public class BaseSegments implements Serializable {
                     }
                 });
 
-        // Step 5: Reprocess merged segments (loop until no segments left to merge)
+        // Step 6: Reprocess merged segments (loop until no segments left to merge)
 
         // recombine nonmerging and loop segments with merged segments
         DataSet<BaseSegment> recombinedSegment = mergedSegments
