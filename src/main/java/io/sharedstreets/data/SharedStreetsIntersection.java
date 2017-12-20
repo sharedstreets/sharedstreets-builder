@@ -60,7 +60,7 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
 
         intersection.setNodeId(this.osmNodeId);
 
-        intersection.setLat((float)this.point.getX());
+        intersection.setLon((float)this.point.getX());
         intersection.setLat((float)this.point.getY());
 
         for(UniqueId inboundId : this.inboundSegmentIds) {
