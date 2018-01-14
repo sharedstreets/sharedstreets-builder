@@ -1,10 +1,13 @@
 package io.sharedstreets.tools.builder.util;
 
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -54,18 +57,15 @@ public class UniqueId implements Comparable {
 
 
 
-    public static UniqueId fromString(String data) {
+    public static UniqueId fromString(String data) throws Exception {
         UniqueId uniqueId = new UniqueId();
-
-        ByteBuffer bb = ByteBuffer.wrap(Base58.decode(data));
-        uniqueId.bytes = bb.array();
-
+        uniqueId.bytes = Hex.decodeHex(data.toCharArray());
         return uniqueId;
     }
 
     @Override
     public String toString() {
-        return Base58.encode(bytes);
+        return Hex.encodeHexString(this.bytes);
     }
 
     @Override
