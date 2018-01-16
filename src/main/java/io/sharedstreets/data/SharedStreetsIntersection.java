@@ -70,7 +70,7 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
 
         for(UniqueId outboundId : this.outboundSegmentIds) {
 
-            intersection.addInboundReferenceIds(outboundId.toString());
+            intersection.addOutboundReferenceIds(outboundId.toString());
         }
 
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
