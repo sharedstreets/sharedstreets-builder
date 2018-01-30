@@ -91,8 +91,8 @@ public class SharedStreetsReference extends TilableData implements Serializable 
                 lr.setOutboundBearing((int)Math.round(locationReference.outboundBearing));
 
 
-            lr.setLat((float)locationReference.point.getY());
-            lr.setLon((float)locationReference.point.getX());
+            lr.setLon(locationReference.point.getX());
+            lr.setLat(locationReference.point.getY());
 
             reference.addLocationReferences(lr);
         }
@@ -107,6 +107,10 @@ public class SharedStreetsReference extends TilableData implements Serializable 
     @Override
     @JsonIgnore
     public String getId() {
+
+        if(id == null)
+            this.id = generateId(this);
+
         return this.id.toString();
     }
 
@@ -332,11 +336,12 @@ public class SharedStreetsReference extends TilableData implements Serializable 
                 hashString += String.format(" %d", Math.round(lr.distanceToNextRef * 100)); // store in centimeter
             }
             if(lr.inboundBearing != null) {
-                hashString += String.format(" %.1f", lr.inboundBearing);
+                hashString += String.format(" %d", Math.round(lr.inboundBearing));
             }
         }
+        UniqueId id = UniqueId.generateHash(hashString);
 
-        return UniqueId.generateHash(hashString);
+        return id;
     }
 
 }

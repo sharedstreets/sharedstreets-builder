@@ -8,9 +8,8 @@ import io.sharedstreets.tools.builder.tiles.TilableData;
 import io.sharedstreets.tools.builder.util.UniqueId;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,6 +26,10 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
     @Override
     @JsonIgnore
     public String getId() {
+
+        if(id == null)
+            this.id = generateId(this);
+
         return this.id.toString();
     }
 
@@ -40,6 +43,7 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
     }
 
     public static UniqueId generateId(SharedStreetsIntersection ssi) {
+
         String hashString = new String();
 
         hashString = String.format("Intersection %.6f %.6f", ssi.point.getX(), ssi.point.getY());
@@ -56,12 +60,12 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
 
         SharedStreetsProto.SharedStreetsIntersection.Builder intersection =  SharedStreetsProto.SharedStreetsIntersection.newBuilder();
 
-        intersection.setId(this.id.toString());
+        intersection.setId(this.getId());
 
         intersection.setNodeId(this.osmNodeId);
 
-        intersection.setLon((float)this.point.getX());
-        intersection.setLat((float)this.point.getY());
+        intersection.setLon(this.point.getX());
+        intersection.setLat(this.point.getY());
 
         for(UniqueId inboundId : this.inboundSegmentIds) {
 
@@ -77,6 +81,35 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
         intersection.build().writeDelimitedTo(bytes);
 
         return bytes.toByteArray();
+    }
+
+    public static SharedStreetsIntersection fromBinary(byte[] data) throws Exception {
+        InputStream is = new ByteArrayInputStream(data);
+        SharedStreetsProto.SharedStreetsIntersection input = SharedStreetsProto.SharedStreetsIntersection.parseDelimitedFrom(is);
+
+        SharedStreetsIntersection obj = new SharedStreetsIntersection();
+
+        obj.point = new Point();
+        obj.osmNodeId = input.getNodeId();
+        obj.point.setX(input.getLon());
+        obj.point.setY(input.getLat());
+
+        ArrayList<UniqueId> inboundIdList = new ArrayList<>();
+
+        for(String id : input.getInboundReferenceIdsList()){
+            inboundIdList.add(UniqueId.fromString(id));
+        }
+        obj.inboundSegmentIds = inboundIdList.toArray(new UniqueId[inboundIdList.size()]);
+
+        ArrayList<UniqueId> outboundIdList= new ArrayList<>();
+
+        for(String id : input.getOutboundReferenceIdsList()){
+            outboundIdList.add(UniqueId.fromString(id));
+        }
+        obj.outboundSegmentIds = outboundIdList.toArray(new UniqueId[outboundIdList.size()]);
+
+
+        return obj;
     }
 
     @Override

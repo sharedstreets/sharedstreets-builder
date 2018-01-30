@@ -63,8 +63,8 @@ public class SharedStreetsGeometry extends TilableData implements Serializable {
 
         for(int i = 0; i < ((Polyline)geometry).getPointCount(); i++) {
 
-            geometryBuilder.addLatlons((float)((Polyline)geometry).getPoint(i).getY()); // lat
-            geometryBuilder.addLatlons((float)((Polyline)geometry).getPoint(i).getX()); // lons
+            geometryBuilder.addLonlats(((Polyline)geometry).getPoint(i).getX()); // lon
+            geometryBuilder.addLonlats(((Polyline)geometry).getPoint(i).getY()); // lat
 
         }
 
@@ -77,6 +77,10 @@ public class SharedStreetsGeometry extends TilableData implements Serializable {
     @Override
     @JsonIgnore
     public String getId() {
+
+        if(id == null)
+            this.id = generateId(this);
+
         return this.id.toString();
     }
 
