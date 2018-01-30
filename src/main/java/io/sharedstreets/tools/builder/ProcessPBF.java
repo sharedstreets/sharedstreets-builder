@@ -45,7 +45,7 @@ public class ProcessPBF {
                 .create() );
 
         options.addOption( OptionBuilder.withLongOpt( "zlevel" )
-                .withDescription( "tile z-level (default 10)" )
+                .withDescription( "tile z-level (default 12)" )
                 .hasArg()
                 .withArgName("Z-LEVEL")
                 .create() );
@@ -55,7 +55,7 @@ public class ProcessPBF {
 
         String outputPath = "";
 
-        Integer zLevel = 11;
+        Integer zLevel = 12 ;
 
         try {
             // parse the command line arguments

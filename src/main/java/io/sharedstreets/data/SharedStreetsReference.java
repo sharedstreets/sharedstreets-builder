@@ -68,7 +68,7 @@ public class SharedStreetsReference extends TilableData implements Serializable 
 
         SharedStreetsProto.SharedStreetsReference.Builder reference = SharedStreetsProto.SharedStreetsReference.newBuilder();
 
-        reference.setId(this.id.toString());
+        reference.setId(this.getId());
 
         reference.setFormOfWay(SharedStreetsProto.SharedStreetsReference.FormOfWay.forNumber(this.formOfWay.getValue()));
         reference.setGeometryId(this.geometry.id.toString());
