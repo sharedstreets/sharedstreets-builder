@@ -335,9 +335,6 @@ public class SharedStreetsReference extends TilableData implements Serializable 
                 hashString += String.format(" %d", Math.round(lr.outboundBearing));
                 hashString += String.format(" %d", Math.round(lr.distanceToNextRef * 100)); // store in centimeter
             }
-            if(lr.inboundBearing != null) {
-                hashString += String.format(" %d", Math.round(lr.inboundBearing));
-            }
         }
 
         return UniqueId.generateHash(hashString);
