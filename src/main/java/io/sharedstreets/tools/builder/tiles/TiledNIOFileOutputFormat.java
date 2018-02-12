@@ -29,7 +29,7 @@ public abstract class TiledNIOFileOutputFormat<IT> extends RichOutputFormat<IT> 
         NIOFileObject(String filePath) throws IOException {
 
             try {
-                stream = new FileOutputStream(filePath);
+                stream = new FileOutputStream(filePath, true);
                 channel = stream.getChannel();
             } catch(Exception ex) {
 
