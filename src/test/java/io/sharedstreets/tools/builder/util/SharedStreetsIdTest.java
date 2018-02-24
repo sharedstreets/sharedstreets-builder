@@ -24,13 +24,13 @@ public class SharedStreetsIdTest {
         sharedStreetsIntersection.inboundSegmentIds = new UniqueId[0];
         sharedStreetsIntersection.outboundSegmentIds = new UniqueId[0];
 
-        sharedStreetsIntersection.point.setX(-74.0090917); // longitude -> float precision becomes -74.009094
+        sharedStreetsIntersection.point.setX(-74.0090917); // longitude -> float precision becomes -74.00909
         sharedStreetsIntersection.point.setY(40.7260025); // latitude
 
         // should generate message Intersection -74.009094 40.726002
-        assertEquals(UniqueId.generateHash("Intersection -74.009092 40.726003").toString(), "8037a9444353cd7dd3f58d9a436f2537");
+        assertEquals(UniqueId.generateHash("Intersection -74.00909 40.72600 123").toString(), "2456bffd0ffca31eaaeb81f627415e29");
 
-        assertEquals(sharedStreetsIntersection.getId(), "8037a9444353cd7dd3f58d9a436f2537");
+        assertEquals(sharedStreetsIntersection.getId(), "2456bffd0ffca31eaaeb81f627415e29");
 
         byte[] data = sharedStreetsIntersection.toBinary();
 
