@@ -330,7 +330,7 @@ public class SharedStreetsReference extends TilableData implements Serializable 
         hashString = "Reference " + ssr.formOfWay.value;
 
         for(SharedStreetsLocationReference lr : ssr.locationReferences) {
-            hashString += String.format(" %.6f %.6f", lr.point.getX(), lr.point.getY());
+            hashString += String.format(" %.5f %.5f", lr.point.getX(), lr.point.getY());
             if(lr.outboundBearing != null) {
                 hashString += String.format(" %d", Math.round(lr.outboundBearing));
                 hashString += String.format(" %d", Math.round(lr.distanceToNextRef * 100)); // store in centimeter

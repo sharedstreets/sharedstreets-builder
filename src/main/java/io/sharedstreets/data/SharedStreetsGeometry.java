@@ -105,7 +105,7 @@ public class SharedStreetsGeometry extends TilableData implements Serializable {
         hashString = "Geometry";
 
         for(int i = 0; i < ((Polyline)ssg.geometry).getPointCount(); i++) {
-            hashString += String.format(" %.6f %.6f", ((Polyline)ssg.geometry).getPoint(i).getX(), ((Polyline)ssg.geometry).getPoint(i).getY());
+            hashString += String.format(" %.5f %.5f", ((Polyline)ssg.geometry).getPoint(i).getX(), ((Polyline)ssg.geometry).getPoint(i).getY());
         }
 
         return UniqueId.generateHash(hashString);
