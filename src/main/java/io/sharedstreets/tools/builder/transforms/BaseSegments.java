@@ -169,18 +169,40 @@ public class BaseSegments implements Serializable {
 
 
         // map way section to segments (one section per segment)
-        DataSet<BaseSegment> initialSegments = waySections.map(new MapFunction<WaySection, BaseSegment>() {
+        // add boolean for splitting finalized segments from iteration workset
+        DataSet<Tuple2<Boolean, BaseSegment>> initialSegments = waySections.map(new MapFunction<WaySection, Tuple2<Boolean, BaseSegment>>() {
             @Override
-            public BaseSegment map(WaySection value) throws Exception {
+            public Tuple2<Boolean, BaseSegment> map(WaySection value) throws Exception {
 
-                return new BaseSegment(value);
+                // all segments are part of the initial works set
+                return new Tuple2<Boolean, BaseSegment>(true, new BaseSegment(value));
             }
         });
 
 
         // begin iteration
         // to reduce segments down so all merged sections are contained within a single BaseSegment
-        IterativeDataSet<BaseSegment> iterateSegments = initialSegments.iterate(1000);
+        IterativeDataSet<Tuple2<Boolean, BaseSegment>> iterateSegments = initialSegments.iterate(100);
+
+        // split already finalized segments
+        DataSet<Tuple2<Boolean, BaseSegment>> finalizedSegments = iterateSegments.filter(new FilterFunction<Tuple2<Boolean, BaseSegment>>() {
+            @Override
+            public boolean filter(Tuple2<Boolean, BaseSegment> value) throws Exception {
+                return !value.f0;
+            }
+        });
+
+        DataSet<BaseSegment> iterationWorkset = iterateSegments.filter(new FilterFunction<Tuple2<Boolean, BaseSegment>>() {
+            @Override
+            public boolean filter(Tuple2<Boolean, BaseSegment> value) throws Exception {
+                return value.f0;
+            }
+        }).map(new MapFunction<Tuple2<Boolean, BaseSegment>, BaseSegment>() {
+            @Override
+            public BaseSegment map(Tuple2<Boolean, BaseSegment> value) throws Exception {
+                return value.f1;
+            }
+        });
 
         //  Input:
         //
@@ -215,7 +237,7 @@ public class BaseSegments implements Serializable {
 
         // index segments by common start/end nodes -- every segment gets mapped twice, once each for start and end nodes
         // Tuple2(intersectionId, segmentId, merging, segment)
-        DataSet<Tuple4<Long, Long, Boolean, BaseSegment>> segmentIntersectionMap = iterateSegments
+        DataSet<Tuple4<Long, Long, Boolean, BaseSegment>> segmentIntersectionMap = iterationWorkset
                 .flatMap(new FlatMapFunction<BaseSegment, Tuple4<Long, Long, Boolean, BaseSegment>>() {
                     @Override
                     public void flatMap(BaseSegment value, Collector<Tuple4<Long, Long, Boolean, BaseSegment>> out) throws Exception {
@@ -447,13 +469,36 @@ public class BaseSegments implements Serializable {
 
         // Step 6: Reprocess merged segments (loop until no segments left to merge)
 
+
+
         // recombine nonmerging and loop segments with merged segments
-        DataSet<BaseSegment> recombinedSegment = mergedSegments
-                .union(nonmergingSegments)
-                .union(loopSegments);
+        DataSet<Tuple2<Boolean, BaseSegment>> recombinedSegment = finalizedSegments
+                .union(nonmergingSegments.map(new MapFunction<BaseSegment, Tuple2<Boolean, BaseSegment>>() {
+                    @Override
+                    public Tuple2<Boolean, BaseSegment> map(BaseSegment value) throws Exception {
+                        return new Tuple2<>(false, value);
+                    }
+                }))
+                .union(loopSegments.map(new MapFunction<BaseSegment, Tuple2<Boolean, BaseSegment>>() {
+                    @Override
+                    public Tuple2<Boolean, BaseSegment> map(BaseSegment value) throws Exception {
+                        return new Tuple2<>(false, value);
+                    }
+                }))
+                .union(mergedSegments.map(new MapFunction<BaseSegment, Tuple2<Boolean, BaseSegment>>() {
+                    @Override
+                    public Tuple2<Boolean, BaseSegment> map(BaseSegment value) throws Exception {
+                        return new Tuple2<>(true, value);
+                    }
+                }));
 
         // finalize iteration -- if mergedSegments is empty nothing left to merge.
-        segments = iterateSegments.closeWith(recombinedSegment, mergedSegments);
+        segments = iterateSegments.closeWith(recombinedSegment, mergedSegments).map(new MapFunction<Tuple2<Boolean, BaseSegment>, BaseSegment>() {
+            @Override
+            public BaseSegment map(Tuple2<Boolean, BaseSegment> value) throws Exception {
+                return value.f1;
+            }
+        });
 
 
     }
