@@ -69,6 +69,8 @@ public class Way extends SpatialEntity {
             return ROAD_CLASS.ClassResidential;
         else if (fields.containsKey("highway") && fields.get("highway").toLowerCase().trim().startsWith("service"))
             return ROAD_CLASS.ClassService;
+        else if (fields.containsKey("highway") && fields.get("highway").toLowerCase().trim().startsWith("living_street"))
+            return ROAD_CLASS.ClassService;
         else
             return ROAD_CLASS.ClassOther;
     }
