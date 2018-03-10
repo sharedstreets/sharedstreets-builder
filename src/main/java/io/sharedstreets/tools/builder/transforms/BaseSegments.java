@@ -117,6 +117,7 @@ public class BaseSegments implements Serializable {
 
                             WaySection section = new WaySection();
                             section.wayId = way.f1.id;
+                            section.name = way.f1.getName();
                             section.nodes = Arrays.copyOfRange(way.f1.nodes, 0, way.f1.nodes.length);
                             section.oneWay = way.f1.isOneWay();
                             section.roadClass = way.f1.roadClass();
