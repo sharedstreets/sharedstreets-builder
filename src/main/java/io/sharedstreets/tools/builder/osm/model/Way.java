@@ -78,9 +78,9 @@ public class Way extends SpatialEntity {
 
             // attempt to exclude parking lots, driveways and other private driveways to keep just public services roads
             // not consistently mapped in OSM... https://taginfo.openstreetmap.org/keys/?key=service#values
-            if (fields.containsKey("service") && fields.get("service").toLowerCase().trim().startsWith("parking") ||
+            if (fields.containsKey("service") && (fields.get("service").toLowerCase().trim().startsWith("parking") ||
                     fields.get("service").toLowerCase().trim().startsWith("driveway") ||
-                    fields.get("service").toLowerCase().trim().startsWith("drive-through"))
+                    fields.get("service").toLowerCase().trim().startsWith("drive-through")))
                 return ROAD_CLASS.ClassOther;
             else
                 return ROAD_CLASS.ClassService;
