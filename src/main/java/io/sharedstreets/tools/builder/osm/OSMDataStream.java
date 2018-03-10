@@ -238,9 +238,11 @@ public class OSMDataStream {
                         way.id = first.id;
                         way.nodes = second.f1;
 
+                        // don't include non-highway ways
                         if(!way.isHighway())
                             return;
 
+                        // don't include uncatorized highways
                         if(way.roadClass().getValue() > 7)
                             return;
 
