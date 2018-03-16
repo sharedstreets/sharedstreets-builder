@@ -82,7 +82,7 @@ public class SharedStreetsReference extends TilableData implements Serializable 
             // optional values in proto3 require google Int32Value wrapper classes -- ugh!
 
             if(locationReference.distanceToNextRef != null)
-                lr.setDistanceToNextRef((int)Math.round(locationReference.distanceToNextRef * 100));
+                lr.setDistanceToNextRef((int)Math.round(locationReference.distanceToNextRef * 100)); // store in centimeter precision
 
             if(locationReference.inboundBearing != null)
                 lr.setInboundBearing((int)Math.round(locationReference.inboundBearing));
@@ -333,7 +333,7 @@ public class SharedStreetsReference extends TilableData implements Serializable 
             hashString += String.format(" %.5f %.5f", lr.point.getX(), lr.point.getY());
             if(lr.outboundBearing != null) {
                 hashString += String.format(" %d", Math.round(lr.outboundBearing));
-                hashString += String.format(" %d", Math.round(lr.distanceToNextRef * 100)); // store in centimeter
+                hashString += String.format(" %d", Math.round(lr.distanceToNextRef)); // hash of distance to next ref in meters -- stored in centimeters
             }
         }
 

@@ -140,6 +140,7 @@ public class BaseSegments implements Serializable {
                                     if (i > previousSplit) {
                                         WaySection section = new WaySection();
                                         section.wayId = way.f1.id;
+                                        section.name = way.f1.getName();
                                         section.nodes = Arrays.copyOfRange(way.f1.nodes, previousSplit, i + 1);
                                         section.oneWay = way.f1.isOneWay();
                                         section.roadClass = way.f1.roadClass();
@@ -156,6 +157,7 @@ public class BaseSegments implements Serializable {
                             if (previousSplit < way.f1.nodes.length - 1) {
                                 WaySection section = new WaySection();
                                 section.wayId = way.f1.id;
+                                section.name = way.f1.getName();
                                 section.nodes = Arrays.copyOfRange(way.f1.nodes, previousSplit, way.f1.nodes.length);
                                 section.oneWay = way.f1.isOneWay();
                                 section.roadClass = way.f1.roadClass();
