@@ -46,7 +46,11 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
 
         String hashString = new String();
 
-        hashString = String.format("Intersection %.5f %.5f %s", ssi.point.getX(), ssi.point.getY(), ssi.osmNodeId.toString());
+        hashString = String.format("Intersection %.5f %.5f", ssi.point.getX(), ssi.point.getY());
+
+        // synthetic LPRs don't have node IDs...
+        if(ssi.osmNodeId != null)
+            hashString += " " + ssi.osmNodeId.toString();
 
         return UniqueId.generateHash(hashString);
 

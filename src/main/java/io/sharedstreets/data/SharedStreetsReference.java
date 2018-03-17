@@ -271,6 +271,10 @@ public class SharedStreetsReference extends TilableData implements Serializable 
                 else
                     intersection.osmNodeId = geometry.metadata.getStartNodeId();
             }
+            else {
+                // synthetic LPRs don't have node IDs
+                intersection.osmNodeId = null;
+            }
 
             intersection.id = SharedStreetsIntersection.generateId(intersection);
 
