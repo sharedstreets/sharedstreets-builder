@@ -51,7 +51,6 @@ public class SharedStreetsGeometryJSONEncoder implements Encoder {
                 }
             }
 
-
             if(metadata) {
                 stream.writeObjectField("metadata");
                 stream.writeVal(ssg.metadata);

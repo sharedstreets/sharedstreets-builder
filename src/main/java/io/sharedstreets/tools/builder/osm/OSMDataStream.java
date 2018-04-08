@@ -25,6 +25,12 @@ import java.util.ArrayList;
 
 public class OSMDataStream {
 
+    public class FilteredWays
+    {
+        public DataSet<Tuple4<Long, Long, Integer, Boolean>> orderedWayNodeLink; // way_id, node_id, order, terminal_point
+        public DataSet<Way> ways;
+    }
+
     private String inputFile;
     private ExecutionEnvironment env;
 
@@ -39,10 +45,14 @@ public class OSMDataStream {
 
     // ways
     private DataSet<WayEntity> rawWays;
-    public DataSet<Tuple4<Long, Long, Integer, Boolean>> orderedWayNodeLink; // way_id, node_id, order, terminal_point
-    public DataSet<Way> ways;
 
-    // relaitons
+    DataSet<Tuple4<Long, Long, Integer, Boolean>> unfilteredOrderedWayNodeLink;
+    DataSet<Tuple2<Long, NodePosition[]>> wayNodes;
+
+    //public DataSet<Tuple4<Long, Long, Integer, Boolean>> orderedWayNodeLink; // way_id, node_id, order, terminal_point
+    //public DataSet<Way> ways;
+
+    // relations
     public DataSet<Relation> relations;
 
 
@@ -142,7 +152,7 @@ public class OSMDataStream {
 
         // link way id to node ids with ordering
         // way_id, node_id, order, terminating
-        DataSet<Tuple4<Long, Long, Integer, Boolean>> unfilteredOrderedWayNodeLink = filteredWays
+        unfilteredOrderedWayNodeLink = filteredWays
                 .flatMap(new FlatMapFunction<WayEntity, Tuple4<Long, Long, Integer, Boolean>>() {
                     @Override
                     public void flatMap(WayEntity value, Collector<Tuple4<Long, Long, Integer, Boolean>> out) throws Exception {
@@ -176,7 +186,7 @@ public class OSMDataStream {
 
         // group nodes by way id and sort on node field order
         // way_id, NodePosition[]
-        DataSet<Tuple2<Long, NodePosition[]>> wayNodes = joinedWaysWithPoints
+        wayNodes = joinedWaysWithPoints
                 .groupBy(0)
                 .sortGroup(1, Order.ASCENDING)
                 .reduceGroup(new GroupReduceFunction<Tuple5<Long, Integer, Long, Double, Double>, Tuple2<Long, NodePosition[]>>() {
@@ -204,6 +214,11 @@ public class OSMDataStream {
                     }
                 }).partitionByHash(0);
 
+    }
+
+    public FilteredWays getFilteredWays(final Way.ROAD_CLASS filteredClass) {
+
+        FilteredWays filteredWays = new FilteredWays();
 
         // create the way entities
         DataSet<Tuple2<Long, Way>> unfilteredWays = rawWays.joinWithHuge(wayNodes)
@@ -243,14 +258,14 @@ public class OSMDataStream {
                             return;
 
                         // don't include uncatorized highways
-                        if(way.roadClass().getValue() > 7)
+                        if(way.roadClass().getValue() > filteredClass.getValue())
                             return;
 
                         out.collect(new Tuple2<>(way.id, way));
                     }
                 }).partitionByHash(0);
 
-        orderedWayNodeLink = unfilteredOrderedWayNodeLink
+        filteredWays.orderedWayNodeLink = unfilteredOrderedWayNodeLink
                 .leftOuterJoin(unfilteredWays)
                 .where(0)
                 .equalTo(0)
@@ -263,13 +278,14 @@ public class OSMDataStream {
                     }
                 });
 
-        ways = unfilteredWays.map(new MapFunction<Tuple2<Long, Way>, Way>() {
+        filteredWays.ways = unfilteredWays.map(new MapFunction<Tuple2<Long, Way>, Way>() {
             @Override
             public Way map(Tuple2<Long, Way> value) throws Exception {
                 return value.f1;
             }
         });
 
+        return filteredWays;
     }
 
 

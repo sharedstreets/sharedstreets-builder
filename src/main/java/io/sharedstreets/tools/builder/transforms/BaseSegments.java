@@ -28,7 +28,7 @@ public class BaseSegments implements Serializable {
 
     public DataSet<BaseSegment> segments;
 
-    public BaseSegments(OSMDataStream dataStream, Intersections intersections) {
+    public BaseSegments(OSMDataStream.FilteredWays filteredWays, Intersections intersections) {
 
         // split ways
 
@@ -95,7 +95,7 @@ public class BaseSegments implements Serializable {
                 });
 
         // can't use key selector on leftinnerjoin (appears to be a flink bug) so mapping to index by id
-        DataSet<Tuple2<Long, Way>> mappedWays = dataStream.ways.map(new MapFunction<Way, Tuple2<Long, Way>>() {
+        DataSet<Tuple2<Long, Way>> mappedWays = filteredWays.ways.map(new MapFunction<Way, Tuple2<Long, Way>>() {
             @Override
             public Tuple2<Long, Way> map(Way value) throws Exception {
 
