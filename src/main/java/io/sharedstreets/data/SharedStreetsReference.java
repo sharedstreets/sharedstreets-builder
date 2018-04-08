@@ -188,7 +188,7 @@ public class SharedStreetsReference extends TilableData implements Serializable 
         else
             path = (Polyline)geometry.geometry;
 
-        double length = GeoOp.length(path);
+        double length = geometry.length;
 
         int lprCount;
 

@@ -8,6 +8,7 @@ import com.jsoniter.annotation.JsonIgnore;
 import io.sharedstreets.data.output.proto.SharedStreetsProto;
 import io.sharedstreets.tools.builder.model.BaseSegment;
 import io.sharedstreets.tools.builder.tiles.TilableData;
+import io.sharedstreets.tools.builder.util.geo.Geography;
 import io.sharedstreets.tools.builder.util.geo.TileId;
 import io.sharedstreets.tools.builder.util.UniqueId;
 
@@ -20,6 +21,7 @@ import java.util.Set;
 
 public class SharedStreetsGeometry extends TilableData implements Serializable {
 
+    private final static Geography GeoOp = new Geography();
 
     public UniqueId id;
 
@@ -28,6 +30,8 @@ public class SharedStreetsGeometry extends TilableData implements Serializable {
     public UniqueId forwardReferenceId;
     public UniqueId backReferenceId;
 
+    public double length;
+
     public Geometry geometry;
 
     @JsonIgnore
@@ -35,9 +39,11 @@ public class SharedStreetsGeometry extends TilableData implements Serializable {
 
     public SharedStreetsGeometry(BaseSegment segment) {
 
-        this.geometry = (Polyline)segment.constructGeometry();
+        this.geometry = segment.constructGeometry();
+        this.length = GeoOp.length((Polyline)this.geometry);;
 
         this.id = SharedStreetsGeometry.generateId(this);
+
 
         this.metadata = new SharedStreetsOSMMetadata(this, segment);
     }
