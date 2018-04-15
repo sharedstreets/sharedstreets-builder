@@ -113,9 +113,9 @@ public class ProcessPBF {
 
         // list of way classes for export tiles (must be in sequential order from least to most filtered)
         ArrayList<Way.ROAD_CLASS> filteredClasses = new ArrayList<>();
-        filteredClasses.add(Way.ROAD_CLASS.ClassService);
         filteredClasses.add(Way.ROAD_CLASS.ClassUnclassified);
-        filteredClasses.add(Way.ROAD_CLASS.ClassSecondary);
+        filteredClasses.add(Way.ROAD_CLASS.ClassTertiary);
+        filteredClasses.add(Way.ROAD_CLASS.ClassPrimary);
         filteredClasses.add(Way.ROAD_CLASS.ClassMotorway);
 
         for(Way.ROAD_CLASS filteredClass : filteredClasses) {
@@ -128,7 +128,7 @@ public class ProcessPBF {
             // build internal model for street network
             BaseSegments segments = new BaseSegments(filteredWays, intersections);
 
-            // build sharedstreets references, geometries, intersections and metadata
+            // build SharedStreets references, geometries, intersections and metadata
             SharedStreetData streets = new SharedStreetData(segments);
 
             ProtoTileOutputFormat outputFormat = new ProtoTileOutputFormat<Tuple2<TileId, TilableData>>(outputPath, filteredClass);

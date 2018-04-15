@@ -123,8 +123,17 @@ public class BaseSegment extends SpatialEntity {
         for(WaySection waySection : this.waySections) {
             if(roadClass == null || roadClass == waySection.roadClass)
                 roadClass = waySection.roadClass;
-            else {
-                roadClass = Way.ROAD_CLASS.ClassOther;
+
+            // if mixed segment make segment class equal lowest class
+            // per https://github.com/sharedstreets/sharedstreets-ref-system/issues/20#issuecomment-378079937
+            //               [excluded road]
+            //                        |
+            //    [highway=primary]   |  [highway=secondary]
+            //    ====================*=====================
+            //               [roadClass=secondary]
+
+            else if(waySection.roadClass.getValue() > roadClass.getValue()){
+                roadClass = waySection.roadClass;
                 break;
             }
         }
