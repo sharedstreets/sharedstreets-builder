@@ -20,4 +20,4 @@ The builder application is built on Apache Flink. If memory requirements exceed 
 
 - [*v0.1:*](https://github.com/sharedstreets/sharedstreets-builder/releases/tag/0.1-preview) OSM support
 - *v0.2:* Add OSM metadata support for support ways per [#9](https://github.com/sharedstreets/sharedstreets-builder/issues/9)
-- [*v0.3:*]() add heirarchical filterfing for roadClass per [sharedstreets-ref-system/#20](https://github.com/sharedstreets/sharedstreets-ref-system/issues/20#issuecomment-381010861)
+- [*v0.3:*](https://github.com/sharedstreets/sharedstreets-builder/releases/tag/0.3) add heirarchical filterfing for roadClass per [sharedstreets-ref-system/#20](https://github.com/sharedstreets/sharedstreets-ref-system/issues/20#issuecomment-381010861)
