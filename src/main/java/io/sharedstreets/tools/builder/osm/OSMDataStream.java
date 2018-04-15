@@ -257,7 +257,7 @@ public class OSMDataStream {
                         if(!way.isHighway())
                             return;
 
-                        // don't include uncatorized highways
+                        // don't include tags greater than filter value
                         if(way.roadClass().getValue() > filteredClass.getValue())
                             return;
 
