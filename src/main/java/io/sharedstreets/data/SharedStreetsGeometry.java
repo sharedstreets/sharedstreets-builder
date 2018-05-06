@@ -98,7 +98,7 @@ public class SharedStreetsGeometry extends TilableData implements Serializable {
 
         for(int i = 0; i < ((Polyline)this.geometry).getPointCount(); i++) {
 
-            tileIdSet.add(TileId.lonLatToTileId(zLevel, ((Polyline)this.geometry).getPoint(0).getX(), ((Polyline)this.geometry).getPoint(0).getY()));
+            tileIdSet.add(TileId.lonLatToTileId(zLevel, ((Polyline)this.geometry).getPoint(i).getX(), ((Polyline)this.geometry).getPoint(i).getY()));
         }
 
         return tileIdSet;

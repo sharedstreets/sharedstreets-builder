@@ -53,14 +53,8 @@ public class SharedStreetData implements Serializable {
                 Tuple2<SharedStreetsIntersection, SharedStreetsReference> startIntersection = new Tuple2<SharedStreetsIntersection, SharedStreetsReference>(value.locationReferences[0].intersection, value);
                 out.collect(startIntersection);
 
-                if(startIntersection.f0.id.toString().equals("9dVpcxMxmtoBXBgHmLDTXj"))
-                    System.out.print("9dVpcxMxmtoBXBgHmLDTXj");
-
                 Tuple2<SharedStreetsIntersection, SharedStreetsReference> endIntersection = new Tuple2<SharedStreetsIntersection, SharedStreetsReference>(value.locationReferences[value.locationReferences.length-1].intersection, value);
                 out.collect(endIntersection);
-
-                if(endIntersection.f0.id.toString().equals("9dVpcxMxmtoBXBgHmLDTXj"))
-                    System.out.print("9dVpcxMxmtoBXBgHmLDTXj");
 
             }
         });
@@ -81,9 +75,6 @@ public class SharedStreetData implements Serializable {
                 ArrayList<UniqueId> inboundReferences = new ArrayList<>();
 
                 for(Tuple2<SharedStreetsIntersection, SharedStreetsReference> item : values) {
-
-                    if(item.f0.id.toString().equals("9dVpcxMxmtoBXBgHmLDTXj"))
-                        System.out.print("9dVpcxMxmtoBXBgHmLDTXj");
 
                     if(mergedIntersection == null)
                         mergedIntersection = item.f0;
@@ -148,7 +139,7 @@ public class SharedStreetData implements Serializable {
             @Override
             public void flatMap(SharedStreetsReference value, Collector<Tuple2<TileId, TilableData>> out) throws Exception {
                 Set<TileId> tileIds = value.getTileKeys(zLevel);
-
+                
                 for(TileId id : tileIds) {
                     out.collect(new Tuple2<TileId, TilableData>(id, value));
                 }

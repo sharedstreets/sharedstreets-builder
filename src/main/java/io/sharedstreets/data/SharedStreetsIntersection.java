@@ -52,7 +52,10 @@ public class SharedStreetsIntersection extends TilableData implements Comparable
         if(ssi.osmNodeId != null)
             hashString += " " + ssi.osmNodeId.toString();
 
-        return UniqueId.generateHash(hashString);
+        UniqueId id = UniqueId.generateHash(hashString);
+
+
+        return id;
 
     }
 
