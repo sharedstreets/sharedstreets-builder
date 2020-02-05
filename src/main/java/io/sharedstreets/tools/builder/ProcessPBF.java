@@ -58,12 +58,20 @@ public class ProcessPBF {
                 .withArgName("Z-LEVEL")
                 .create() );
 
+        options.addOption( OptionBuilder.withLongOpt( "roadClass" )
+                .withDescription( "road class (default 6)" )
+                .hasArg()
+                .withArgName("Z-LEVEL")
+                .create() );
+
 
         String inputFile = "";
 
         String outputPath = "";
 
         Integer zLevel = 12 ;
+
+        Integer roadClass = 6 ;
 
         try {
             // parse the command line arguments
@@ -81,6 +89,10 @@ public class ProcessPBF {
 
             if(line.hasOption("zlevel")){
                 zLevel = Integer.parseInt(line.getOptionValue("zlevel"));
+            }
+
+            if(line.hasOption("roadClass")){
+                roadClass = Integer.parseInt(line.getOptionValue("roadClass"));
             }
         }
         catch( Exception exp ) {
@@ -113,10 +125,33 @@ public class ProcessPBF {
 
         // list of way classes for export tiles (must be in sequential order from least to most filtered)
         ArrayList<Way.ROAD_CLASS> filteredClasses = new ArrayList<>();
-        filteredClasses.add(Way.ROAD_CLASS.ClassUnclassified);
-        filteredClasses.add(Way.ROAD_CLASS.ClassTertiary);
-        filteredClasses.add(Way.ROAD_CLASS.ClassPrimary);
-        filteredClasses.add(Way.ROAD_CLASS.ClassMotorway);
+
+        if(roadClass.intValue() == Way.ROAD_CLASS.ClassUnclassified.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassUnclassified);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassTertiary.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassTertiary);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassSecondary.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassSecondary);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassPrimary.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassPrimary);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassTrunk.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassTrunk);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassMotorway.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassUnclassified);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassResidential.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassResidential);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassService.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassService);
+
+        else if(roadClass.intValue() == Way.ROAD_CLASS.ClassOther.getValue())
+            filteredClasses.add(Way.ROAD_CLASS.ClassOther);
 
         for(Way.ROAD_CLASS filteredClass : filteredClasses) {
 

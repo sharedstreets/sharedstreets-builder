@@ -341,7 +341,7 @@ public class SharedStreetsReference extends TilableData implements Serializable 
             }
         }
         UniqueId id = UniqueId.generateHash(hashString);
-
+        
         return id;
     }
 

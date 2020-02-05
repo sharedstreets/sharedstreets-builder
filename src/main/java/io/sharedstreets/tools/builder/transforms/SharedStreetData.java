@@ -139,7 +139,7 @@ public class SharedStreetData implements Serializable {
             @Override
             public void flatMap(SharedStreetsReference value, Collector<Tuple2<TileId, TilableData>> out) throws Exception {
                 Set<TileId> tileIds = value.getTileKeys(zLevel);
-                
+
                 for(TileId id : tileIds) {
                     out.collect(new Tuple2<TileId, TilableData>(id, value));
                 }

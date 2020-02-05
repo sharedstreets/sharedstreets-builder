@@ -26,7 +26,11 @@ public class SharedStreetsOSMMetadata implements Serializable {
         public Long[] nodeIds;
         public String name;
 
+        public String[] tagNames;
+        public String[] tagValues;
+
         public WaySectionMetadata( WaySection section, boolean storeWaySegmentNames) {
+
             this.wayId = section.wayId;
 
             this.roadClass = section.roadClass;
@@ -42,6 +46,17 @@ public class SharedStreetsOSMMetadata implements Serializable {
             for(int i = 0; i < section.nodes.length; i++) {
                 this.nodeIds[i] = section.nodes[i].nodeId;
             }
+
+            this.tagNames = new String[section.fields.keySet().size()];
+            this.tagValues = new String[section.fields.keySet().size()];
+
+            int i = 0;
+            for(String key : section.fields.keySet()) {
+                this.tagNames[i] = key;
+                this.tagValues[i] = section.fields.get(key);
+                i++;
+            }
+
         }
     }
 
