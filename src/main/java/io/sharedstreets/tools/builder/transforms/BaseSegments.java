@@ -123,6 +123,7 @@ public class BaseSegments implements Serializable {
                             section.roadClass = way.f1.roadClass();
                             section.link = way.f1.isLink();
                             section.roundabout = way.f1.isRoundabout();
+                            section.fields = way.f1.fields;
                             out.collect(section);
                         } else {
 
@@ -146,6 +147,7 @@ public class BaseSegments implements Serializable {
                                         section.roadClass = way.f1.roadClass();
                                         section.link = way.f1.isLink();
                                         section.roundabout = way.f1.isRoundabout();
+                                        section.fields = way.f1.fields;
                                         out.collect(section);
 
                                         previousSplit = i;
@@ -163,6 +165,7 @@ public class BaseSegments implements Serializable {
                                 section.roadClass = way.f1.roadClass();
                                 section.link = way.f1.isLink();
                                 section.roundabout = way.f1.isRoundabout();
+                                section.fields = way.f1.fields;
 
                                 out.collect(section);
                             }

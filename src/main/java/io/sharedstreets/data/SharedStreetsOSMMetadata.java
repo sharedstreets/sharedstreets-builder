@@ -51,12 +51,12 @@ public class SharedStreetsOSMMetadata implements Serializable {
             this.tagValues = new String[section.fields.keySet().size()];
 
             int i = 0;
-            for(String key : section.fields.keySet()) {
+            for (String key : section.fields.keySet()) {
                 this.tagNames[i] = key;
                 this.tagValues[i] = section.fields.get(key);
                 i++;
-            }
 
+            }
         }
     }
 
@@ -94,6 +94,13 @@ public class SharedStreetsOSMMetadata implements Serializable {
 
             for(long nodeId : waySectionMetadata.nodeIds) {
                 waySection.addNodeIds(nodeId);
+            }
+
+            for(int i = 0 ; i < waySectionMetadata.tagNames.length; i++) {
+                SharedStreetsProto.OsmTag.Builder tag = SharedStreetsProto.OsmTag.newBuilder();
+                tag.setKey(waySectionMetadata.tagNames[i]);
+                tag.setValue(waySectionMetadata.tagValues[i]);
+                waySection.addTags(tag);
             }
 
             osmMetadata.addWaySections(waySection);
